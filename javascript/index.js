@@ -55,7 +55,9 @@ jsonStream.on('data', function(data) {
           " | pieceLength " + pieceLength(piecePosition.pieceIndex, carLane) +
           //" | isSwitch " + isSwitch(piecePosition.pieceIndex) +
           " | " + pieceDirectionString(piecePosition.pieceIndex) +
-          " | speed " + speed(piecePosition));
+          " | speed " + speed(piecePosition) +
+          " | acc " + Acceleration
+      );
 
       if(carAngle >40 || carAngle<-20){
           send({
@@ -122,6 +124,8 @@ var lanes = null;
 
 var lastPieceIndex = 0;
 var lastPieceDistance = 0;
+var LastSpeed = 0;
+var Acceleration = 0;
 function speed(piecePosition){
     var pieceIndex = piecePosition.pieceIndex;
     var pieceDistance = piecePosition.inPieceDistance;
@@ -132,10 +136,13 @@ function speed(piecePosition){
     if(lastPieceIndex != pieceIndex)
         speed += pieceLength(lastPieceIndex, carLane);
 
-    log("LPD " + lastPieceDistance + " PD " + pieceDistance + " Speed " + speed);
+    //log("LPD " + lastPieceDistance + " PD " + pieceDistance + " Speed " + speed);
 
     lastPieceDistance = pieceDistance;
     lastPieceIndex = pieceIndex;
+
+    Acceleration =  speed - LastSpeed;
+    LastSpeed = speed;
     return speed;
 }
 
