@@ -50,17 +50,17 @@ jsonStream.on('data', function(data) {
 
       //speed(piecePosition);
 
-      log("tick " + data.gameTick + "" +
-          //" | carAngle " + carAngle +
-          " | pieceLength " + pieceLength(piecePosition.pieceIndex, carLane) +
-          //" | isSwitch " + isSwitch(piecePosition.pieceIndex) +
-          " | " + pieceDirectionString(piecePosition.pieceIndex) +
-          " | speed " + speed(piecePosition) +
-          //" | acc " + Acceleration +
-          " | nextSwitch " + leftToNextSwitch(piecePosition.pieceIndex, carLane, piecePosition) +
-          " | nexTurn " + leftToNextTurn(piecePosition.pieceIndex, carLane, piecePosition) +
-          " " + nextTurnDirection(piecePosition.pieceIndex) +
-          " " + isInTurn(piecePosition.pieceIndex)
+      log("tick " + data.gameTick + ""
+          //+" | carAngle " + carAngle
+          +" | pieceLength " + pieceLength(piecePosition.pieceIndex, carLane)
+          //+" | isSwitch " + isSwitch(piecePosition.pieceIndex)
+          //+" | " + pieceDirectionString(piecePosition.pieceIndex)
+          +" | speed " + speed(piecePosition)
+          //+" | acc " + Acceleration
+          //+" | nextSwitch " + leftToNextSwitch(piecePosition.pieceIndex, carLane, piecePosition)
+          +" | nexTurn " + leftToNextTurn(piecePosition.pieceIndex, carLane, piecePosition)
+          +" " + nextTurnDirection(piecePosition.pieceIndex)
+          +" " + isInTurn(piecePosition.pieceIndex)
       );
 
       if(carAngle >40 || carAngle<-20){
@@ -155,6 +155,8 @@ function speed(piecePosition){
 function pieceLength(pieceIndex, carLane){
     if(pieceIndex == null || pieceIndex == undefined || pieces == null)
         return 0;
+    if(pieceIndex >= pieces.length)
+        pieceIndex = 0;
 
     var piece = pieces [pieceIndex];
 
@@ -182,7 +184,11 @@ function normalizedDistanceFromCenter(pieceIndex, carLaneIndex){
 function pieceDirection(pieceIndex){
     if(pieceIndex === undefined)
         return 0;
+    if(pieceIndex >= pieces.length)
+        pieceIndex = 0;
     var piece = pieces [pieceIndex];
+    if(piece === undefined)
+        log(pieceIndex);
     if(piece.angle < 0)
         return 1;
     if(piece.angle > 0)
@@ -206,6 +212,8 @@ function isSwitch(pieceIndex){
        return false;
     if(pieceIndex === undefined)
         return false;
+    if(pieceIndex >= pieces.length)
+        pieceIndex = 0;
     return pieces [pieceIndex].switch === true;
 }
 
@@ -220,15 +228,28 @@ function leftToNextSwitch(pieceIndex, carLane, piecePosition){
     var i = pieceIndex + 1;
     while(pieces[i].switch !== true){
         count += pieceLength(i++, carLane);
+        if(i >= pieces.length)
+            i = 0;
     }
     return count;
 }
 
+// 2 whiles porque se os unir em um e tiver duas curvas para o mesmo lado separados por uma reta,
+// durante a curva o calculo vai ser errado
 function leftToNextTurn(pieceIndex, carLane, piecePosition){
-    var count = inPieceLeft(pieceIndex, carLane, piecePosition);
+    var turnEnds = inPieceLeft(pieceIndex, carLane, piecePosition);
     var i = pieceIndex + 1;
-    while( pieceDirection(i) === 0 || pieceDirection(i) === pieceDirection(pieceIndex)){
+
+    while(pieceDirection(i) === pieceDirection(pieceIndex)){
+        turnEnds += pieceLength(i++, carLane);
+        if(i >= pieces.length)
+            i = 0;
+    }
+    count = turnEnds;
+    while( pieceDirection(i) === 0 ){
         count += pieceLength(i++, carLane);
+        if(i >= pieces.length)
+            i = 0;
     }
     return count;
 }
@@ -239,8 +260,15 @@ function isInTurn(pieceIndex){
 
 function nextTurnDirection(pieceIndex){
     var i = pieceIndex + 1;
-    for(i = pieceIndex + 1; i < pieces.length; i++){
-        if(pieceDirection(i) !== 0  && pieceDirection(i) !== pieceDirection(pieceIndex))
-        return pieceDirection(i);
+    while(pieceDirection(i) === pieceDirection(pieceIndex)){
+        i++;
+        if(i >= pieces.length)
+            i = 0;
     }
+    while(pieceDirection(i) === 0){
+        i++;
+        if(i >= pieces.length)
+            i = 0;
+    }
+    return pieceDirection(i);
 }
