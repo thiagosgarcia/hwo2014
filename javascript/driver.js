@@ -24,7 +24,7 @@ Driver.prototype.driveForStraight = function(car) {
     	return 1.0;
     } else if (currentSpeed < 7.5) {
     	// Why?
-    	return 3.0/currentSpeed;
+    	return 0.0; //3.0/currentSpeed;
     }
     
     return 0.0;
@@ -42,7 +42,7 @@ Driver.prototype.driveForBend = function(car) {
             return 0.0;
 	} else if (currentAcc > 0) {
 		// Why?
-		return (1.7/currentSpeed);	
+		return 0.0; //(1.7/currentSpeed);	
 	}
     
 	return 1.0;
