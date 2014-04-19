@@ -49,46 +49,21 @@ jsonStream.on('data', function(data) {
       var carLane = piecePosition.lane;
 
       //speed(piecePosition);
-
+        var direction = pieceDirectionString(piecePosition.pieceIndex);
       log("tick " + data.gameTick + ""
           //+" | carAngle " + carAngle
-          +" | pieceLength " + pieceLength(piecePosition.pieceIndex, carLane)
+          //+" | pieceLength " + pieceLength(piecePosition.pieceIndex, carLane)
           //+" | isSwitch " + isSwitch(piecePosition.pieceIndex)
           //+" | " + pieceDirectionString(piecePosition.pieceIndex)
-          +" | speed " + speed(piecePosition)
-          //+" | acc " + Acceleration
+          +" | speed " + LastSpeed
+          +" | acc " + Acceleration
           //+" | nextSwitch " + leftToNextSwitch(piecePosition.pieceIndex, carLane, piecePosition)
           +" | nexTurn " + leftToNextTurn(piecePosition.pieceIndex, carLane, piecePosition)
-          +" " + nextTurnDirection(piecePosition.pieceIndex)
-          +" " + isInTurn(piecePosition.pieceIndex)
+          +" " + ( direction  )
+          //+" " + isInTurn(piecePosition.pieceIndex))
       );
 
-      if(carAngle >40 || carAngle<-20){
-          send({
-              msgType: "throttle",
-              data: -1
-          });
-      }else if(carAngle >30 || carAngle<-15){
-          send({
-              msgType: "throttle",
-              data: -0.7
-          });
-      }else if(carAngle >20 || carAngle<-5){
-          send({
-              msgType: "throttle",
-              data: -0.3
-          });
-      }else if(carAngle > 10 || carAngle < -1){
-          send({
-              msgType: "throttle",
-              data: 0.4
-          });
-      }else{
-        send({
-          msgType: "throttle",
-          data: 0.8
-        });
-      }
+      drive(piecePosition);
   } else {
     if (data.msgType === 'join') {
       console.log('Joined')
@@ -109,6 +84,82 @@ jsonStream.on('error', function() {
   return log("disconnected");
 });
 
+function throttle(val){
+    if(val > 1)
+        val = 1;
+    if(val < 1)
+        val = 0;
+    log("thottle " + val);
+    send({
+        msgType: "throttle",
+        data: val
+    });
+}
+function ping(){
+    log("thottle " + val);
+    send({
+        msgType: "ping",
+        data: {}
+    });
+}
+
+function drive(piecePosition) {
+
+    var leftToTurn = leftToNextTurn(piecePosition.pieceIndex, piecePosition.lane, piecePosition);
+    var spd = speed(piecePosition);
+    var acc = Acceleration;
+    if (!isInTurn(piecePosition.pieceIndex)) {
+        if (leftToTurn > Math.pow(spd, 2)) {
+            throttle(1);
+        } else if (spd < 7.5) {
+            throttle( (1 / spd) * 3 );
+        }else{
+            throttle(0);
+        }
+    } else {
+        if (spd < 7) {
+            if (acc < 0 || spd < 6.9)
+                throttle(1);
+            else
+                throttle(0);
+        } else if (acc > 0) {
+            throttle((1 / spd) * 1,7 );
+        } else {
+            throttle(1);
+        }
+
+    }
+}
+
+
+/*
+    if(carAngle >40 || carAngle<-20){
+        send({
+            msgType: "throttle",
+            data: -1
+        });
+    }else if(carAngle >30 || carAngle<-15){
+        send({
+            msgType: "throttle",
+            data: -0.7
+        });
+    }else if(carAngle >20 || carAngle<-5){
+        send({
+            msgType: "throttle",
+            data: -0.3
+        });
+    }else if(carAngle > 10 || carAngle < -1){
+        send({
+            msgType: "throttle",
+            data: 0.4
+        });
+    }else{
+        send({
+            msgType: "throttle",
+            data: 0.8
+        });
+    }
+*/
 
 
 // Funções para serem movidas para as classes correspondentes
