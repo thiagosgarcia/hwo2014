@@ -56,7 +56,11 @@ jsonStream.on('data', function(data) {
           //" | isSwitch " + isSwitch(piecePosition.pieceIndex) +
           " | " + pieceDirectionString(piecePosition.pieceIndex) +
           " | speed " + speed(piecePosition) +
-          " | acc " + Acceleration
+          //" | acc " + Acceleration +
+          " | nextSwitch " + leftToNextSwitch(piecePosition.pieceIndex, carLane, piecePosition) +
+          " | nexTurn " + leftToNextTurn(piecePosition.pieceIndex, carLane, piecePosition) +
+          " " + nextTurnDirection(piecePosition.pieceIndex) +
+          " " + isInTurn(piecePosition.pieceIndex)
       );
 
       if(carAngle >40 || carAngle<-20){
@@ -176,6 +180,8 @@ function normalizedDistanceFromCenter(pieceIndex, carLaneIndex){
 // fator multiplicador para calcular a distãncia a percorrer numa piece.
 // left é positivo, right, negativo; straight desconsidera o distanceFromCenter
 function pieceDirection(pieceIndex){
+    if(pieceIndex === undefined)
+        return 0;
     var piece = pieces [pieceIndex];
     if(piece.angle < 0)
         return 1;
@@ -185,6 +191,8 @@ function pieceDirection(pieceIndex){
 }
 
 function pieceDirectionString(pieceIndex){
+    if(pieceIndex === undefined)
+        return 0;
     var direction = pieceDirection(pieceIndex);
     if(direction > 0)
         return "left";
@@ -196,7 +204,43 @@ function pieceDirectionString(pieceIndex){
 function isSwitch(pieceIndex){
     if(pieces == null)
        return false;
+    if(pieceIndex === undefined)
+        return false;
     return pieces [pieceIndex].switch === true;
 }
 
 
+// coisas para AI
+function inPieceLeft(pieceIndex, carLane, piecePosition){
+    return pieceLength(pieceIndex, carLane) - piecePosition.inPieceDistance;
+}
+
+function leftToNextSwitch(pieceIndex, carLane, piecePosition){
+    var count = inPieceLeft(pieceIndex, carLane, piecePosition);
+    var i = pieceIndex + 1;
+    while(pieces[i].switch !== true){
+        count += pieceLength(i++, carLane);
+    }
+    return count;
+}
+
+function leftToNextTurn(pieceIndex, carLane, piecePosition){
+    var count = inPieceLeft(pieceIndex, carLane, piecePosition);
+    var i = pieceIndex + 1;
+    while( pieceDirection(i) === 0 || pieceDirection(i) === pieceDirection(pieceIndex)){
+        count += pieceLength(i++, carLane);
+    }
+    return count;
+}
+
+function isInTurn(pieceIndex){
+    return pieceDirection(pieceIndex) !== 0;
+}
+
+function nextTurnDirection(pieceIndex){
+    var i = pieceIndex + 1;
+    for(i = pieceIndex + 1; i < pieces.length; i++){
+        if(pieceDirection(i) !== 0  && pieceDirection(i) !== pieceDirection(pieceIndex))
+        return pieceDirection(i);
+    }
+}
