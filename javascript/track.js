@@ -6,7 +6,7 @@ function buildTrackPieces(pieces)
 	
 	for(var i = 0; i < pieces.length; i++) {
 		var pieceData = pieces[i];
-		var piece = new Piece(pieceData);
+		var piece = new Piece(pieceData, i);
 		
 		builtPieces.push(piece);
 	}
