@@ -30,35 +30,45 @@ jsonStream.on('data', function(data) {
 
     if(data.msgType === 'gameInit'){
         gameInitData = info;
+
+        race = gameInitData.race;
+        track = race.track;
+        pieces = track.pieces;
+        lanes = track.lanes;
     }
+
     if(data.msgType === 'lapFinished')
-        console.log("Lap Finished");
+        log("Lap Finished");
 
   if (data.msgType === 'carPositions') {
       //console.log(data);
       //console.log(info);
 
-      var angle = parseFloat(info[0].angle + "");
+      var carAngle = parseFloat(info[0].angle + "");
       var piecePosition = info[0].piecePosition;
-      console.log("tick " + data.gameTick + "" +
-          " | angle " + angle + " | pieceLength " + pieceLength(piecePosition.pieceIndex))
+      var carLane = piecePosition.lane;
 
-      if(angle >40 || angle<-20){
+      log("tick " + data.gameTick + "" +
+          " | carAngle " + carAngle + " | pieceLength " + pieceLength(piecePosition.pieceIndex, carLane.endLaneIndex) +
+          " | isSwitch " + isSwitch(piecePosition.pieceIndex) +
+          " | pieceDirectionString " + pieceDirectionString(piecePosition.pieceIndex));
+
+      if(carAngle >40 || carAngle<-20){
           send({
               msgType: "throttle",
               data: -1
           });
-      }else if(angle >30 || angle<-15){
+      }else if(carAngle >30 || carAngle<-15){
           send({
               msgType: "throttle",
               data: -0.7
           });
-      }else if(angle >20 || angle<-5){
+      }else if(carAngle >20 || carAngle<-5){
           send({
               msgType: "throttle",
               data: -0.3
           });
-      }else if(angle > 10 || angle < -1){
+      }else if(carAngle > 10 || carAngle < -1){
           send({
               msgType: "throttle",
               data: 0.4
@@ -66,7 +76,7 @@ jsonStream.on('data', function(data) {
       }else{
         send({
           msgType: "throttle",
-          data: 1
+          data: 0.8
         });
       }
   } else {
@@ -86,40 +96,86 @@ jsonStream.on('data', function(data) {
 });
 
 jsonStream.on('error', function() {
-  return console.log("disconnected");
+  return log("disconnected");
 });
 
 
 
 // Funções para serem movidas para as classes correspondentes
+
+var DEBUG = true;
+function log(log){
+    if(DEBUG)
+        console.log(log);
+}
+
 function speed(data){
 
 }
 
 var gameInitData = null;
-function pieceLength(index){
-    if(gameInitData == null)
+var race = null;
+var track = null;
+var pieces = null;
+var lanes = null;
+
+// Fiz essa com calcLength, mas acho que vai ser melhor usarmos a inLaneLength
+// por que aí sim daria a real distância que o carro vai percorrer
+function pieceLength(pieceIndex, carLane){
+    if(pieceIndex == null || pieceIndex == undefined || pieces == null)
         return 0;
 
-    console.log("index " + index);
-    console.log("gameInitData " + gameInitData);
-
-    var race = gameInitData.race;
-    console.log("race " + race);
-    var track = race.track;
-    var pieces = track.pieces;
-    var piece = pieces [index];
+    var piece = pieces [pieceIndex];
 
     if(piece.length != undefined)
-        return calcLength(piece.length, 0);
+        return inLaneLength(piece.length, 0);
     if(piece.radius != undefined)
-        return calcLength(piece.radius, piece.angle);
+        return inLaneLength(piece.radius, piece.angle, pieceIndex, carLane);
 }
 
 function calcLength(radius, angle){
     if(angle === 0)
         return radius;
-    return (Math.PI * radius * angle) / 180;
+    return Math.abs(Math.PI * radius * angle) / 180;
+}
+
+function inLaneLength(radius, angle, pieceIndex, carLaneIndex){
+    if(angle === 0 )
+        return radius;
+    return Math.abs(Math.PI * (radius + normalizedDistanceFromCenter(pieceIndex, carLaneIndex))  * angle ) / 180;
+}
+
+// Tem que inverter o sinal da distanceFromCenter quando for pra right
+// e desconsiderar o valor quando vai straight
+function normalizedDistanceFromCenter(pieceIndex, carLaneIndex){
+    var distanceFromCenter = lanes[carLaneIndex].distanceFromCenter;
+    return distanceFromCenter * pieceDirection(pieceIndex);
+}
+
+// fator multiplicador para calcular a distãncia a percorrer numa piece.
+// left é positivo, right, negativo; straight desconsidera o distanceFromCenter
+function pieceDirection(pieceIndex){
+    var piece = pieces [pieceIndex];
+    if(piece.angle < 0)
+        return 1;
+    if(piece.angle > 0)
+        return -1;
+    return 0;
+}
+
+function pieceDirectionString(pieceIndex){
+    var direction = pieceDirection(pieceIndex);
+    if(direction > 0)
+        return "left";
+    if(direction < 0)
+        return "right";
+    return "straight";
+}
+
+function isSwitch(pieceIndex){
+    if(pieces == null)
+       return false;
+    return pieces [pieceIndex].switch === true;
 }
 
 
