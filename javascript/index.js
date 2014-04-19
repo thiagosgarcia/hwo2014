@@ -1,6 +1,9 @@
 var net = require("net");
 var JSONStream = require('JSONStream');
 
+var Piece = require("piece");
+console.log(Piece);
+
 var serverHost = "testserver.helloworldopen.com";
 var serverPort = 8091;
 var botName = "Working Minds";
