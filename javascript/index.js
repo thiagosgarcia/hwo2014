@@ -48,10 +48,14 @@ jsonStream.on('data', function(data) {
       var piecePosition = info[0].piecePosition;
       var carLane = piecePosition.lane;
 
+      //speed(piecePosition);
+
       log("tick " + data.gameTick + "" +
-          " | carAngle " + carAngle + " | pieceLength " + pieceLength(piecePosition.pieceIndex, carLane.endLaneIndex) +
-          " | isSwitch " + isSwitch(piecePosition.pieceIndex) +
-          " | pieceDirectionString " + pieceDirectionString(piecePosition.pieceIndex));
+          //" | carAngle " + carAngle +
+          " | pieceLength " + pieceLength(piecePosition.pieceIndex, carLane) +
+          //" | isSwitch " + isSwitch(piecePosition.pieceIndex) +
+          " | " + pieceDirectionString(piecePosition.pieceIndex) +
+          " | speed " + speed(piecePosition));
 
       if(carAngle >40 || carAngle<-20){
           send({
@@ -109,15 +113,31 @@ function log(log){
         console.log(log);
 }
 
-function speed(data){
-
-}
-
 var gameInitData = null;
 var race = null;
 var track = null;
 var pieces = null;
 var lanes = null;
+
+
+var lastPieceIndex = 0;
+var lastPieceDistance = 0;
+function speed(piecePosition){
+    var pieceIndex = piecePosition.pieceIndex;
+    var pieceDistance = piecePosition.inPieceDistance;
+    var carLane = piecePosition.lane;
+    var speed = 0;
+
+    speed = pieceDistance - lastPieceDistance;
+    if(lastPieceIndex != pieceIndex)
+        speed += pieceLength(lastPieceIndex, carLane);
+
+    log("LPD " + lastPieceDistance + " PD " + pieceDistance + " Speed " + speed);
+
+    lastPieceDistance = pieceDistance;
+    lastPieceIndex = pieceIndex;
+    return speed;
+}
 
 // Fiz essa com calcLength, mas acho que vai ser melhor usarmos a inLaneLength
 // por que aí sim daria a real distância que o carro vai percorrer
@@ -133,16 +153,10 @@ function pieceLength(pieceIndex, carLane){
         return inLaneLength(piece.radius, piece.angle, pieceIndex, carLane);
 }
 
-function calcLength(radius, angle){
-    if(angle === 0)
-        return radius;
-    return Math.abs(Math.PI * radius * angle) / 180;
-}
-
-function inLaneLength(radius, angle, pieceIndex, carLaneIndex){
+function inLaneLength(radius, angle, pieceIndex, carLane){
     if(angle === 0 )
         return radius;
-    return Math.abs(Math.PI * (radius + normalizedDistanceFromCenter(pieceIndex, carLaneIndex))  * angle ) / 180;
+    return Math.abs(Math.PI * (radius + normalizedDistanceFromCenter(pieceIndex, carLane.endLaneIndex))  * angle ) / 180;
 }
 
 // Tem que inverter o sinal da distanceFromCenter quando for pra right
