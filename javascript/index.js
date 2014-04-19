@@ -1,8 +1,6 @@
+// ***** Client connection imports and creation ***** //
 var net = require("net");
 var JSONStream = require('JSONStream');
-
-var Piece = require("piece");
-console.log(Piece);
 
 var serverHost = "testserver.helloworldopen.com";
 var serverPort = 8091;
@@ -28,25 +26,36 @@ function send(json) {
 
 jsonStream = client.pipe(JSONStream.parse());
 
+// ***** Class imports ***** //
+var Piece = require("./piece.js");
+var Track = require("./track.js");
+var Car = require("./car.js");
+
+// ***** Race information objects ***** //
+var track = null;
+
+
+// ***** Race events functions ***** //
+function gameInit(data) {
+	track = new Track(data.race.track);
+	console.log(track);
+	
+	pieces = data.race.track.pieces;
+	lanes = data.race.track.lanes;
+}
+
+// ***** Race events listener ***** //
 jsonStream.on('data', function(data) {
     var info = data['data'];
 
     if(data.msgType === 'gameInit'){
-        gameInitData = info;
-
-        race = gameInitData.race;
-        track = race.track;
-        pieces = track.pieces;
-        lanes = track.lanes;
+		gameInit(info);
     }
 
     if(data.msgType === 'lapFinished')
         log("Lap Finished");
 
   if (data.msgType === 'carPositions') {
-      //console.log(data);
-      //console.log(info);
-
       var carAngle = parseFloat(info[0].angle + "");
       var piecePosition = info[0].piecePosition;
       var carLane = piecePosition.lane;
@@ -173,9 +182,6 @@ function log(log){
         console.log(log);
 }
 
-var gameInitData = null;
-var race = null;
-var track = null;
 var pieces = null;
 var lanes = null;
 
@@ -184,6 +190,7 @@ var lastPieceIndex = 0;
 var lastPieceDistance = 0;
 var LastSpeed = 0;
 var Acceleration = 0;
+
 function speed(piecePosition){
     var pieceIndex = piecePosition.pieceIndex;
     var pieceDistance = piecePosition.inPieceDistance;

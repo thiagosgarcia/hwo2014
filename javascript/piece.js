@@ -1,9 +1,9 @@
 function getPieceType(data) {
   // S for Straight
-  if(data.length !==) return "S";
+  if(data.length !== undefined) return "S";
 
   // B for Bend
-  if(data.radius !==) return "B";
+  if(data.radius !== undefined) return "B";
 
   return "";
 }
