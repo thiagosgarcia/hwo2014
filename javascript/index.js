@@ -118,7 +118,7 @@ function drive(piecePosition) {
         }
     } else {
         if (spd < 7) {
-            if (acc < 0 || spd < 6.9)
+            if (acc < 0 || spd < 6.5)
                 throttle(1);
             else
                 throttle(0);
