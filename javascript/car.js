@@ -22,8 +22,7 @@ function Car(data, track) {
 	this.track = track;
 	
 	this.angle = null;
-    this.currentPiece = null;
-    this.currentPieceIndex = 0;
+    	this.currentPiece = null;
 	this.inPieceDistance = null;
 	this.lane = null;
 	this.lap = null;
@@ -33,10 +32,11 @@ function Car(data, track) {
 	this.lastSpeed = 0.0;
 	this.acceleration = 0.0;
 
-    this.turboAvailable = false;
-    this.turboDurationMilliseconds = 0.0;
-    this.turboDurationTicks = 0.0
-    this.turboFactor = 1.0;
+    	this.turboAvailable = false;
+    	this.turboDurationMilliseconds = 0.0;
+    	this.turboDurationTicks = 0.0
+    	this.turboFactor = 1.0;
+	this.checkSwitch = true;
 	
 	this.driver = new Driver();
 }
@@ -59,9 +59,14 @@ Car.prototype.updateCarPosition = function(positionInfoArray) {
 	this.angle = positionInfo.angle;
 	var piecePosition = positionInfo.piecePosition;
 
-    this.currentPieceIndex = piecePosition.pieceIndex;
 	this.currentPiece = this.track.pieces[piecePosition.pieceIndex];
 	this.lane = this.track.lanes[piecePosition.lane.endLaneIndex];
+	
+	// If the car entered in a piece that is a switch or bend, 
+	// i'll enable the checkSwitch flag to verify for the possible next switch;
+	if(!!this.lastPiece && (this.lastPiece.index != this.currentPiece.index) && (this.currentPiece.switch || this.currentPiece.type == "B")) {
+		this.checkSwitch = true;
+	}
 	
 	this.inPieceDistance = piecePosition.inPieceDistance;
 	this.lap = piecePosition.lap;
@@ -100,15 +105,45 @@ Car.prototype.distanceToBend = function() {
 		var nextPiece = this.track.pieces[nextPieceIndex];
 		
 		// Found the next Bend, stop the loop;
-		if(nextPiece.type == "B")
+		if(nextPiece.type == "B") {
 			break;
-		
+		}
+			
 		// Increment the next Straight length and loop again;
 		toNextBendDistance += nextPiece.length;
 		nextPieceIndex++;
 	}
 	
 	return toNextBendDistance;
+}
+
+Car.prototype.calculateSwitchDirection = function() {
+	var nextBend = null;
+	var nextSwitch = null;
+	
+	var nextPieceIndex = this.currentPiece.index + 1;
+	while(true) {
+		if(this.track.pieces.length <= nextPieceIndex)
+			nextPieceIndex = 0;
+		
+		var nextPiece = this.track.pieces[nextPieceIndex];
+	
+		if(nextPiece.switch) {
+			nextSwitch = nextPiece;
+		} else if (nextPiece.type == "B") {
+			nextBend = nextPiece;
+			break;
+		}
+		
+		nextPieceIndex++;
+	}
+	
+	// Only calculate the direction if a switch were found before the next bend.
+	if(!!nextSwitch) {
+		return (nextBend.angle > 0) ? 'Right' : 'Left';
+	}
+	
+	return null;
 }
 
 Car.prototype.inLastStraight = function(){

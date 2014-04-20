@@ -51,6 +51,14 @@ function gameInit(info) {
 function race(info, gameTick) {
 	myCar.updateCarPosition(info);
 	throttle(myCar.getThrottle());
+	if(myCar.checkSwitch) {
+		var switchDirection = myCar.calculateSwitchDirection();
+		myCar.checkSwitch = false;
+		
+		if(switchDirection != null) {
+			switchLane(switchDirection);
+		}
+	}
 	
 	log("tick " + gameTick + ""
 		+" | speed " + myCar.lastSpeed
@@ -79,7 +87,7 @@ function ping() {
 	});
 }
 
-function throttle(val){
+function throttle(val) {
     // If throttle == 2 means that turbo was activated
     if(val == 2.0){
         log("Turbo activated!")
@@ -103,6 +111,15 @@ function throttle(val){
 }
 
 var test = 0;
+function switchLane(val) {
+	console.log('will switch to ' + val + ' lane');
+
+	send({
+		msgType: "switchLane",
+		data: val
+	});
+}
+
 // ***** Race events listener ***** //
 jsonStream.on('data', function(data) {
     var info = data['data'];
@@ -160,33 +177,4 @@ var DEBUG = true;
 function log(log){
     if(DEBUG)
         console.log(log);
-}
-
-// coisas para AI
-
-// Para calcular o switch, ainda nao foi finalizado e utilizado;
-function leftToNextSwitch(pieceIndex, carLane, piecePosition){
-    var count = inPieceLeft(pieceIndex, carLane, piecePosition);
-    var i = pieceIndex + 1;
-    while(pieces[i].switch !== true){
-        count += pieceLength(i++, carLane);
-        if(i >= pieces.length)
-            i = 0;
-    }
-    return count;
-}
-
-function nextTurnDirection(pieceIndex){
-    var i = pieceIndex + 1;
-    while(pieceDirection(i) === pieceDirection(pieceIndex)){
-        i++;
-        if(i >= pieces.length)
-            i = 0;
-    }
-    while(pieceDirection(i) === 0){
-        i++;
-        if(i >= pieces.length)
-            i = 0;
-    }
-    return pieceDirection(i);
 }
