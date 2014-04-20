@@ -2,7 +2,7 @@
 var net = require("net");
 var JSONStream = require('JSONStream');
 
-var serverHost = "testserver.helloworldopen.com";
+var serverHost = "senna.helloworldopen.com";
 var serverPort = 8091;
 var botName = "Working Minds";
 var botKey = "rSOwFpIm+ddrdQ";
@@ -15,7 +15,7 @@ client = net.connect(serverPort, serverHost, function() {
     data: {
       name: botName,
       key: botKey
-    }
+    }, tackName : "usa", carCount: 1.0
   });
 });
 
@@ -62,6 +62,15 @@ function race(info, gameTick) {
 	
 }
 
+function updateTurboInfo(info){
+    myCar.updateTurboInfo(info);
+    log("Turbo Available! " +
+        " | turboDurationMilliseconds " + myCar.turboDurationMilliseconds +
+        " | turboDurationTicks " + myCar.turboDurationTicks +
+        " | turboFactor " + myCar.turboFactor
+    );
+}
+
 // ***** Server communication functions ***** //
 function ping() {
 	send({
@@ -71,6 +80,16 @@ function ping() {
 }
 
 function throttle(val){
+    // If throttle == 2 means that turbo was activated
+    if(val == 2.0){
+        log("turbo activated!")
+        send({
+            msgType: "turbo",
+            "data": "Geronimoooooo!!!"
+        });
+        return;
+    }
+
     if(val > 1.0)
         val = 1.0;
     if(val < 0.0)
@@ -83,6 +102,7 @@ function throttle(val){
     });
 }
 
+var test = 0;
 // ***** Race events listener ***** //
 jsonStream.on('data', function(data) {
     var info = data['data'];
@@ -95,6 +115,7 @@ jsonStream.on('data', function(data) {
     	case 'gameInit':
     		gameInit(info);
     		ping();
+            test ++;
     		break;
     	case 'yourCar':
     		createCar(info);
@@ -103,9 +124,19 @@ jsonStream.on('data', function(data) {
     	case 'gameStart':
 			console.log('Race started!');
 			ping();
+            test ++;
 			break;
     	case 'carPositions':
-    		race(info, data['gameTick']);
+            if(test == 2){
+                send({"msgType": "switchLane", "data": "Right"})
+                test = 0;
+                break;
+            }
+            race(info, data['gameTick']);
+    		break;
+    	case 'turboAvailable':
+            updateTurboInfo(info);
+            ping();
     		break;
     	case 'lapFinished':
     		console.log('Lap Finished');
