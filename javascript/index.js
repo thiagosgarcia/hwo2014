@@ -34,10 +34,12 @@ var Car = require("./car.js");
 // ***** Race information objects ***** //
 var track = null;
 var myCar = null;
+var driver = null;
 
 // ***** Race events functions ***** //
 function createCar(info) {
 	myCar = new Car(info);
+	driver = myCar.driver;
 }
 
 function gameInit(info) {
@@ -47,15 +49,11 @@ function gameInit(info) {
 
 function race(info, gameTick) {
 	myCar.updateCarPosition(info);
-	var driver = myCar.driver;
 	
-	if(driver.checkSwitch && !!gameTick) {
-		var switchDirection = driver.determineSwitchDirection();
-		driver.checkSwitch = false;
-		
-		if(switchDirection != null) {
-			switchLane(switchDirection);
-		}
+	// Only check for turbo and switch sends if the game is already started
+	if(!!gameTick) {	
+		checkTurbo();
+		checkSwitch();
 	}
 	throttle(driver.drive());
 	
@@ -69,10 +67,28 @@ function race(info, gameTick) {
 	
 }
 
-function updateTurboInfo(info){
-    myCar.updateTurboInfo(info);
-    log("Turbo Available! " +
-        " | turboDurationMilliseconds " + myCar.turboDurationMilliseconds +
+function checkTurbo() {
+    if(myCar.turboAvailable && driver.canTurbo()) {
+		myCar.turboAvailable = false;
+		turbo();
+	}
+}
+
+function checkSwitch() {
+	if(driver.checkSwitch) {
+		var switchDirection = driver.determineSwitchDirection();
+		driver.checkSwitch = false;
+		
+		if(switchDirection != null) {
+			switchLane(switchDirection);
+		}
+	}
+}
+
+function rechargeTurbo(info){
+    myCar.rechargeTurbo(info);
+    
+    log("Turbo Recharged! " +
         " | turboDurationTicks " + myCar.turboDurationTicks +
         " | turboFactor " + myCar.turboFactor
     );
@@ -87,12 +103,6 @@ function ping() {
 }
 
 function throttle(val) {
-    // If throttle == 2 means that turbo was activated
-    if(val == 2.0){
-		turbo();
-        return;
-    }
-
     if(val > 1.0)
         val = 1.0;
     if(val < 0.0)
@@ -148,7 +158,7 @@ jsonStream.on('data', function(data) {
             race(info, data['gameTick']);
     		break;
     	case 'turboAvailable':
-            updateTurboInfo(info);
+            rechargeTurbo(info);
             ping();
     		break;
     	case 'lapFinished':
