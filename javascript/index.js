@@ -50,7 +50,6 @@ function gameInit(info) {
 
 function race(info, gameTick) {
 	myCar.updateCarPosition(info);
-	throttle(myCar.getThrottle());
 	if(myCar.checkSwitch) {
 		var switchDirection = myCar.calculateSwitchDirection();
 		myCar.checkSwitch = false;
@@ -59,6 +58,8 @@ function race(info, gameTick) {
 			switchLane(switchDirection);
 		}
 	}
+	
+	throttle(myCar.getThrottle());
 	
 	log("tick " + gameTick + ""
 		+" | speed " + myCar.lastSpeed
@@ -93,7 +94,7 @@ function throttle(val) {
         log("Turbo activated!")
         send({
             msgType: "turbo",
-            "data": "Geronimoooooo!!!"
+            data: "Geronimoooooo!!!"
         });
         return;
     }
@@ -110,7 +111,6 @@ function throttle(val) {
     });
 }
 
-var test = 0;
 function switchLane(val) {
 	console.log('will switch to ' + val + ' lane');
 
@@ -132,7 +132,6 @@ jsonStream.on('data', function(data) {
     	case 'gameInit':
     		gameInit(info);
     		ping();
-            test ++;
     		break;
     	case 'yourCar':
     		createCar(info);
@@ -141,14 +140,8 @@ jsonStream.on('data', function(data) {
     	case 'gameStart':
 			console.log('Race started!');
 			ping();
-            test ++;
 			break;
     	case 'carPositions':
-            if(test == 2){
-                send({"msgType": "switchLane", "data": "Right"})
-                test = 0;
-                break;
-            }
             race(info, data['gameTick']);
     		break;
     	case 'turboAvailable':

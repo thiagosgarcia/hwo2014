@@ -22,7 +22,7 @@ function Car(data, track) {
 	this.track = track;
 	
 	this.angle = null;
-    	this.currentPiece = null;
+    this.currentPiece = null;
 	this.inPieceDistance = null;
 	this.lane = null;
 	this.lap = null;
@@ -32,10 +32,10 @@ function Car(data, track) {
 	this.lastSpeed = 0.0;
 	this.acceleration = 0.0;
 
-    	this.turboAvailable = false;
-    	this.turboDurationMilliseconds = 0.0;
-    	this.turboDurationTicks = 0.0
-    	this.turboFactor = 1.0;
+	this.turboAvailable = false;
+	this.turboDurationMilliseconds = 0.0;
+	this.turboDurationTicks = 0.0
+	this.turboFactor = 1.0;
 	this.checkSwitch = true;
 	
 	this.driver = new Driver();
@@ -57,6 +57,7 @@ Car.prototype.updateCarPosition = function(positionInfoArray) {
 	var positionInfo = getCarPositionInfo(this, positionInfoArray);
   
 	this.angle = positionInfo.angle;
+	console.log('car angle: ' + this.angle);
 	var piecePosition = positionInfo.piecePosition;
 
 	this.currentPiece = this.track.pieces[piecePosition.pieceIndex];
@@ -148,7 +149,7 @@ Car.prototype.calculateSwitchDirection = function() {
 
 Car.prototype.inLastStraight = function(){
     // To see when the car is in last straight and never stop throttling
-    if(this.track.lastStraightIndex <= this.currentPieceIndex && this.lap >= this.track.laps - 1){
+    if(this.track.lastStraightIndex <= this.currentPiece.index && this.lap >= this.track.laps - 1){
         console.log("Last straight! Step on it!")
         return true;
     }

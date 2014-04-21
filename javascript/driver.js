@@ -23,7 +23,7 @@ function isTimeToBreak(currentSpeed, distanceToBend){
     // BreakingFactor is the relation between speed and negative acceleration when the car is
     // fully breaking in a Straight piece.
     // It'll be calculated for each race when breaking in the firsts bends because of the
-    // possibility to have an value for each track
+    // possibility to have a value for each track
     var breakingFactor = 49;
 
     // This is a delay for breaking. Less, the pilot breaks earlier, more the pilot breaks later.
