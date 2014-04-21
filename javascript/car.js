@@ -33,7 +33,7 @@ function Car(data, track) {
 	this.lastSpeed = 0.0;
 	this.acceleration = 0.0;
 
-    this.turboAvaliable = false;
+    this.turboAvailable = false;
     this.turboDurationMilliseconds = 0.0;
     this.turboDurationTicks = 0.0
     this.turboFactor = 1.0;
@@ -113,8 +113,8 @@ Car.prototype.distanceToBend = function() {
 
 Car.prototype.inLastStraight = function(){
     // To see when the car is in last straight and never stop throttling
-    if(this.track.lastStraightIndex === this.currentPieceIndex && this.lap === this.track.laps - 1){
-        console.log("LastStraight! Step on it!")
+    if(this.track.lastStraightIndex <= this.currentPieceIndex && this.lap >= this.track.laps - 1){
+        console.log("Last straight! Step on it!")
         return true;
     }
     return false;

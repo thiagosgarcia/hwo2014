@@ -21,11 +21,13 @@ function Track(data, raceInfo) {
     this.laps = raceInfo.laps;
 	
 	this.pieces = buildTrackPieces(data.pieces);
-    this.lastStraightIndex = -1;
-    this.biggestStraightIndex = biggestStraight(this.pieces);
+
+    var indexes = biggestAndLastStraightIndexes(this.pieces);
+    this.biggestStraightIndex = indexes.biggestStraightIndex;
+    this.lastStraightIndex = indexes.lastStraightIndex;
 }
 
-function biggestStraight(pieces){
+function biggestAndLastStraightIndexes(pieces){
     var straightCount = 0;
 
     var biggestStraightIndex = 0;
@@ -45,7 +47,7 @@ function biggestStraight(pieces){
             // Store the beginning of the last straight for further calculations
             if(lastStraightIndex == -1){
                 // If the track starts on a bend, I cannot store this now
-                if(lastStraightIndex < pieces.length - 1 )
+                if(i < pieces.length - 1 )
                     lastStraightIndex = i + 1;
             }
             // Reset values
@@ -71,8 +73,7 @@ function biggestStraight(pieces){
     }
     console.log(" Biggest straight: " + biggestStraightCount + " @ " + biggestStraightIndex );
     // Store the last straight index so at the last lap, driver will never stop throttling
-    this.lastStraightIndex = lastStraightIndex;
-    return biggestStraightIndex;
+    return {biggestStraightIndex: biggestStraightIndex, lastStraightIndex: lastStraightIndex};
 }
 
 module.exports = Track;

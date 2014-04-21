@@ -15,7 +15,7 @@ client = net.connect(serverPort, serverHost, function() {
     data: {
       name: botName,
       key: botKey
-    }, tackName : "usa", carCount: 1.0
+    }
   });
 });
 

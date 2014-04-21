@@ -18,17 +18,18 @@ Driver.prototype.drive = function(car) {
 function isTimeToBreak(currentSpeed, distanceToBend){
     // Target speed to entering bends. It'll be calculated using bend radius and size
     // (to be implemented)
-    var targetSpeed = 6.4;
+    var targetSpeed = 6.5;
 
     // BreakingFactor is the relation between speed and negative acceleration when the car is
     // fully breaking in a Straight piece.
     // It'll be calculated for each race when breaking in the firsts bends because of the
-    // possibility to have many
+    // possibility to have an value for each track
     var breakingFactor = 49;
 
     // This is a delay for breaking. Less, the pilot breaks earlier, more the pilot breaks later.
-    // 4 value makes the pilot break pretty securely and close to the bend.
+    // 4 - 5 value makes the pilot break pretty securely and close to the bend.
     // Smaller values may be used when the car is in the inner lane, greater when it is in the outer lane
+    // carefully, of course
     const breakingTicksDelay = 5;
 
     var speedDiff = currentSpeed - targetSpeed;
@@ -61,18 +62,17 @@ Driver.prototype.driveForStraight = function(car) {
     var currentSpeed = car.speed();
     var turboDurationTicks = car.turboDurationTicks;
     var turboFactor = car.turboFactor;
-    var inLastStraight = false;
 
     if ( !isTimeToBreak(currentSpeed, distanceToBend) || car.inLastStraight()){
         // To use more efficiently the turbo, the driver will only activate it when the car is at the
-        // first piece of the biggest straight in the track
+        // first piece of the biggest straight in the track or in the lastStraight
         if(car.turboAvailable && ( car.track.biggestStraightIndex == car.currentPieceIndex || car.inLastStraight() )){
             car.turboAvailable = false;
             return 2.0; // to activate turbo in throttle function
         }
 
     	return 1.0;
-    } else if (currentSpeed < 6.4) {
+    } else if (currentSpeed < 6.5) {
     	return 0.5;
     }
     
