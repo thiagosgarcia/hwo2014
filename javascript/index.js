@@ -41,7 +41,7 @@ function createCar(info) {
 }
 
 function gameInit(info) {
-	track = new Track(info.race.track);
+	track = new Track(info.race.track, info.race.raceSession);
 	myCar.track = track;
 	
 	pieces = info.race.track.pieces;

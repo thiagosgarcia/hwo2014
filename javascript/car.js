@@ -111,4 +111,13 @@ Car.prototype.distanceToBend = function() {
 	return toNextBendDistance;
 }
 
+Car.prototype.inLastStraight = function(){
+    // To see when the car is in last straight and never stop throttling
+    if(this.track.lastStraightIndex === this.currentPieceIndex && this.lap === this.track.laps - 1){
+        console.log("LastStraight! Step on it!")
+        return true;
+    }
+    return false;
+}
+
 module.exports = Car;

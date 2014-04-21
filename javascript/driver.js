@@ -61,12 +61,12 @@ Driver.prototype.driveForStraight = function(car) {
     var currentSpeed = car.speed();
     var turboDurationTicks = car.turboDurationTicks;
     var turboFactor = car.turboFactor;
+    var inLastStraight = false;
 
-    if ( !isTimeToBreak(currentSpeed, distanceToBend)){
-
+    if ( !isTimeToBreak(currentSpeed, distanceToBend) || car.inLastStraight()){
         // To use more efficiently the turbo, the driver will only activate it when the car is at the
         // first piece of the biggest straight in the track
-        if(car.turboAvailable && car.track.biggestStraightIndex == car.currentPieceIndex){
+        if(car.turboAvailable && ( car.track.biggestStraightIndex == car.currentPieceIndex || car.inLastStraight() )){
             car.turboAvailable = false;
             return 2.0; // to activate turbo in throttle function
         }

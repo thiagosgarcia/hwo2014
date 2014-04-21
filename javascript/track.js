@@ -14,12 +14,14 @@ function buildTrackPieces(pieces)
 	return builtPieces;
 }
 
-function Track(data) {
+function Track(data, raceInfo) {
 	this.id = data.id;
 	this.name = data.name;
 	this.lanes = data.lanes;
+    this.laps = raceInfo.laps;
 	
 	this.pieces = buildTrackPieces(data.pieces);
+    this.lastStraightIndex = -1;
     this.biggestStraightIndex = biggestStraight(this.pieces);
 }
 
@@ -67,7 +69,9 @@ function biggestStraight(pieces){
             biggestStraightIndex = lastStraightIndex;
         }
     }
-    console.log(" Biggest straight: " + biggestStraightCount + " @ " + biggestStraightIndex )
+    console.log(" Biggest straight: " + biggestStraightCount + " @ " + biggestStraightIndex );
+    // Store the last straight index so at the last lap, driver will never stop throttling
+    this.lastStraightIndex = lastStraightIndex;
     return biggestStraightIndex;
 }
 
