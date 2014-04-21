@@ -108,8 +108,8 @@ Driver.prototype.canTurbo = function() {
 		if(car.inPieceDistance < (bendLength / 2))
 			return false;
 		
-		// Check if the car angle is low to be safe enough to use the turbo
-		if(car.angle > 30.0 || car.angle < -30.0)
+		// Check if the car angle is low enough to be safe to use the turbo
+		if(car.angle > 45.0 || car.angle < -45.0)
 			return false;
 	}
 	
