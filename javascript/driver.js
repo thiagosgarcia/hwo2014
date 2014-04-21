@@ -65,17 +65,8 @@ Driver.prototype.driveForStraight = function() {
 	var car = this.car;
     var distanceToBend = car.distanceToBend();
     var currentSpeed = car.speed();
-    var turboDurationTicks = car.turboDurationTicks;
-    var turboFactor = car.turboFactor;
 
     if ( !isTimeToBreak(currentSpeed, distanceToBend) || car.inLastStraight()){
-        // To use more efficiently the turbo, the driver will only activate it when the car is at the
-        // first piece of the biggest straight in the track or in the lastStraight
-        if(car.turboAvailable && ( car.track.biggestStraightIndex == car.currentPieceIndex || car.inLastStraight() )){
-            car.turboAvailable = false;
-            return 2.0; // to activate turbo in throttle function
-        }
-
     	return 1.0;
     } else if (currentSpeed < 6.5) {
     	return 0.5;
@@ -95,6 +86,41 @@ Driver.prototype.driveForBend = function() {
 	}
     
 	return 0.0;
+}
+
+// ***** Turbo intelligence ***** //
+
+// Determine, by the car position in the track, if this tick is the right moment
+// to use the active turbo;
+Driver.prototype.canTurbo = function() {
+	var car = this.car;
+	var currentPiece = car.currentPiece;
+	var currentAcc = this.car.acceleration;
+	
+	// If the car is breaking (acc <= 0.0), the turbo will not be optmized
+	if(currentAcc <= 0.0)
+		return false;
+	
+	// If the currentPiece the car is on is a Bend, we have to check if the car is on its exit;
+	if(currentPiece.type == "B") {
+		// Check if the car is on the last half of the Bend;
+		var bendLength = currentPiece.lengthInLane(car.lane);
+		if(car.inPieceDistance < (bendLength / 2))
+			return false;
+		
+		// Check if the car angle is low to be safe enough to use the turbo
+		if(car.angle > 30.0 || car.angle < -30.0)
+			return false;
+	}
+	
+	var distanceToBend = car.distanceToBend();
+	// The distance the car will travel while on turbo is determined by the following formula:
+	// Distance = Acc * TurboFactor * (Duration ^ 2)
+	var distanceInTurbo = (currentAcc * car.turboFactor * Math.pow(car.turboDuration, 2));
+	// We have to know as well at what distance from the bend the car will begin to break...
+	
+	// If the distance to the next bend is greater than the distance the car will travel in Turbo, turbo away!
+	return (distanceToBend > distanceInTurbo*2);
 }
 
 // ***** Switch intelligence ***** //

@@ -33,23 +33,10 @@ function Car(data, track) {
 	this.acceleration = 0.0;
 
 	this.turboAvailable = false;
-	this.turboDurationMilliseconds = 0.0;
-	this.turboDurationTicks = 0.0
+	this.turboDuration = 0;
 	this.turboFactor = 1.0;
 	
 	this.driver = new Driver(this);
-}
-
-Car.prototype.updateTurboInfo = function(turboInfo){
-    this.turboDurationMilliseconds = turboInfo.turboDurationMilliseconds;
-    this.turboDurationTicks = turboInfo.turboDurationTicks;
-    this.turboFactor = turboInfo.turboFactor;
-
-    // If the factor is less than 1, then we can say the turbo will get the car slower, right?
-    // So, even just for now, I'll make sure we don't get into jokes and only go turbo if
-    // multiplier is equal to or greater than 1
-    if(this.turboFactor >= 1)
-        this.turboAvailable = true;
 }
 
 Car.prototype.updateCarPosition = function(positionInfoArray) {
@@ -60,16 +47,26 @@ Car.prototype.updateCarPosition = function(positionInfoArray) {
 
 	this.currentPiece = this.track.pieces[piecePosition.pieceIndex];
 	this.lane = this.track.lanes[piecePosition.lane.endLaneIndex];
+	this.inPieceDistance = piecePosition.inPieceDistance;
+	this.lap = piecePosition.lap;
 	
 	// If the car entered in a piece that is a switch or bend, 
 	// i'll enable the checkSwitch flag to verify for the possible next switch;
 	if(!!this.lastPiece && (this.lastPiece.index != this.currentPiece.index) && (this.currentPiece.switch || this.currentPiece.type == "B")) {
 		this.driver.checkSwitch = true;
 	}
-	
-	this.inPieceDistance = piecePosition.inPieceDistance;
-	this.lap = piecePosition.lap;
 };
+
+Car.prototype.rechargeTurbo = function(turboInfo) {
+    this.turboDuration = turboInfo.turboDurationTicks;
+    this.turboFactor = turboInfo.turboFactor;
+
+    // If the factor is less than 1, then we can say the turbo will get the car slower, right?
+    // So, even just for now, I'll make sure we don't get into jokes and only go turbo if
+    // multiplier is equal to or greater than 1
+    if(this.turboFactor >= 1)
+        this.turboAvailable = true;
+}
 
 // Speed in distance per tick;
 Car.prototype.speed = function() {   
