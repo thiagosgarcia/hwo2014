@@ -82,7 +82,7 @@ function ping() {
 function throttle(val){
     // If throttle == 2 means that turbo was activated
     if(val == 2.0){
-        log("turbo activated!")
+        log("Turbo activated!")
         send({
             msgType: "turbo",
             "data": "Geronimoooooo!!!"
