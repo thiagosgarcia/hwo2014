@@ -22,7 +22,8 @@ function Car(data, track) {
 	this.track = track;
 	
 	this.angle = null;
-	this.currentPiece = null;
+    this.currentPiece = null;
+    this.currentPieceIndex = 0;
 	this.inPieceDistance = null;
 	this.lane = null;
 	this.lap = null;
@@ -57,7 +58,8 @@ Car.prototype.updateCarPosition = function(positionInfoArray) {
   
 	this.angle = positionInfo.angle;
 	var piecePosition = positionInfo.piecePosition;
-	
+
+    this.currentPieceIndex = piecePosition.pieceIndex;
 	this.currentPiece = this.track.pieces[piecePosition.pieceIndex];
 	this.lane = this.track.lanes[piecePosition.lane.endLaneIndex];
 	

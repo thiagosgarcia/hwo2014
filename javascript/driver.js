@@ -29,7 +29,7 @@ function isTimeToBreak(currentSpeed, distanceToBend){
     // This is a delay for breaking. Less, the pilot breaks earlier, more the pilot breaks later.
     // 4 value makes the pilot break pretty securely and close to the bend.
     // Smaller values may be used when the car is in the inner lane, greater when it is in the outer lane
-    const breakingTicksDelay = 6;
+    const breakingTicksDelay = 5;
 
     var speedDiff = currentSpeed - targetSpeed;
     // If the speed is less than target speed there's no need to break
@@ -62,12 +62,11 @@ Driver.prototype.driveForStraight = function(car) {
     var turboDurationTicks = car.turboDurationTicks;
     var turboFactor = car.turboFactor;
 
-    //if (distanceToBend > Math.pow(currentSpeed, (currentSpeed / 7) + 1)) {
     if ( !isTimeToBreak(currentSpeed, distanceToBend)){
 
-        // To use more efficiently the turbo, the driver will only activate it when the time left
-        // to get to the bend with the turbo speed is greater than the turbo timeout
-        if(car.turboAvailable && distanceToBend / (currentSpeed * turboFactor) > turboDurationTicks){
+        // To use more efficiently the turbo, the driver will only activate it when the car is at the
+        // first piece of the biggest straight in the track
+        if(car.turboAvailable && car.track.biggestStraightIndex == car.currentPieceIndex){
             car.turboAvailable = false;
             return 2.0; // to activate turbo in throttle function
         }
