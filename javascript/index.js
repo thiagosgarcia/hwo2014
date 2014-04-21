@@ -43,23 +43,21 @@ function createCar(info) {
 function gameInit(info) {
 	track = new Track(info.race.track, info.race.raceSession);
 	myCar.track = track;
-	
-	pieces = info.race.track.pieces;
-	lanes = info.race.track.lanes;
 }
 
 function race(info, gameTick) {
 	myCar.updateCarPosition(info);
-	if(myCar.checkSwitch) {
-		var switchDirection = myCar.calculateSwitchDirection();
-		myCar.checkSwitch = false;
+	var driver = myCar.driver;
+	
+	if(driver.checkSwitch && !!gameTick) {
+		var switchDirection = driver.determineSwitchDirection();
+		driver.checkSwitch = false;
 		
 		if(switchDirection != null) {
 			switchLane(switchDirection);
 		}
 	}
-	
-	throttle(myCar.getThrottle());
+	throttle(driver.drive());
 	
 	log("tick " + gameTick + ""
 		+" | speed " + myCar.lastSpeed
@@ -91,11 +89,7 @@ function ping() {
 function throttle(val) {
     // If throttle == 2 means that turbo was activated
     if(val == 2.0){
-        log("Turbo activated!")
-        send({
-            msgType: "turbo",
-            data: "Geronimoooooo!!!"
-        });
+		turbo();
         return;
     }
 
@@ -117,6 +111,15 @@ function switchLane(val) {
 	send({
 		msgType: "switchLane",
 		data: val
+	});
+}
+
+function turbo() {
+	console.log("Turbo activated!");
+	
+	send({
+		msgType: "turbo",
+		data: "Geronimoooooo!!!"
 	});
 }
 

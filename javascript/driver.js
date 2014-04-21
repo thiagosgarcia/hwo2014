@@ -1,15 +1,19 @@
 var Car = require('./car.js');
 
-function Driver() {
+function Driver(car) {
+	this.car = car;
+	this.checkSwitch = true;
 }
 
-Driver.prototype.drive = function(car) {
-	var currentPiece = car.currentPiece;
+// ***** Throttle intelligence ***** //
+
+Driver.prototype.drive = function() {
+	var currentPiece = this.car.currentPiece;
     
     if (currentPiece.type == "S") {
-    	return this.driveForStraight(car);
+    	return this.driveForStraight();
     } else if (currentPiece.type == "B") {
-        return this.driveForBend(car);
+        return this.driveForBend();
     }
 
     return 1;
@@ -57,7 +61,8 @@ function isTimeToBreak(currentSpeed, distanceToBend){
     return false;
 }
 
-Driver.prototype.driveForStraight = function(car) {
+Driver.prototype.driveForStraight = function() {
+	var car = this.car;
     var distanceToBend = car.distanceToBend();
     var currentSpeed = car.speed();
     var turboDurationTicks = car.turboDurationTicks;
@@ -79,17 +84,88 @@ Driver.prototype.driveForStraight = function(car) {
     return 0.0;
 }
 
-Driver.prototype.driveForBend = function(car) {
-    var currentSpeed = car.speed();
-    var currentAcc = car.acceleration;
+Driver.prototype.driveForBend = function() {
+    var currentSpeed = this.car.speed();
+    var currentAcc = this.car.acceleration;
 
-	if (currentSpeed < 6.5) {
+	if (currentSpeed < 6.425) {
         return 1.0;
 	} else if (currentAcc < 0) {
 		return 0.0;
 	}
     
 	return 0.0;
+}
+
+// ***** Switch intelligence ***** //
+
+// This algorithm will sum the length of all the lanes in the bends between two switches,
+// and send the switch message to the direction of the lane with the shorter length.
+// The less ground to cross, the lesser the time to cross it;
+Driver.prototype.determineSwitchDirection = function() {
+	var car = this.car; 
+	var nextBends = new Array();
+	var nextSwitch = null;
+	
+	var nextPieceIndex = car.currentPiece.index + 1;
+	while(true) {
+		if(car.track.pieces.length <= nextPieceIndex)
+			nextPieceIndex = 0;
+		
+		var nextPiece = car.track.pieces[nextPieceIndex];
+	
+		if(nextPiece.switch) {
+			// Found the second switch, after one or more bend pieces were found in between them. Stop the loop;
+			if(!!nextSwitch && nextBends.length > 0) break;
+			
+			// Found the first switch, assign it to nextSwitch;
+			nextSwitch = nextPiece;
+		} 
+		
+		if (nextPiece.type == "B") {
+			// Found a bend before a switch, break;
+			if(nextSwitch == null) break;
+		
+			nextBends.push(nextPiece);
+		}
+		
+		nextPieceIndex++;
+	}
+	
+	// Only calculate the direction if a switch were found before the next bend.
+	if(!!nextSwitch && nextBends.length > 0) {
+		var lanes = car.track.lanes;
+		var shorterLane = null;
+		
+		// Determine the shorter lane in the bends after the nextSwitch
+		for(var i = 0; i < lanes.length; i++) {
+			var lane = lanes[i];
+			var laneLength = 0;
+			
+			for(var j = 0; j < nextBends.length; j++) {
+				var bend = nextBends[j];
+				laneLength += bend.lengthInLane(lane);
+			}
+			
+			if(shorterLane == null || laneLength < shorterLane.length) {
+				shorterLane = lane;
+				shorterLane.length = laneLength;
+			}
+		}
+		
+		// The shorter lane is more to the left of the center, switch Left.
+		if(car.lane.distanceFromCenter > shorterLane.distanceFromCenter) {
+			return 'Left';
+		}
+		// The shorter lane is more to the right of the center, switch Right.
+		else if(car.lane.distanceFromCenter < shorterLane.distanceFromCenter) {
+			return 'Right';
+		}
+		
+		// The lane the car is driving is already the shorter! Nothing to do here..
+	}
+	
+	return null;
 }
 
 module.exports = Driver;

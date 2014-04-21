@@ -36,9 +36,8 @@ function Car(data, track) {
 	this.turboDurationMilliseconds = 0.0;
 	this.turboDurationTicks = 0.0
 	this.turboFactor = 1.0;
-	this.checkSwitch = true;
 	
-	this.driver = new Driver();
+	this.driver = new Driver(this);
 }
 
 Car.prototype.updateTurboInfo = function(turboInfo){
@@ -57,7 +56,6 @@ Car.prototype.updateCarPosition = function(positionInfoArray) {
 	var positionInfo = getCarPositionInfo(this, positionInfoArray);
   
 	this.angle = positionInfo.angle;
-	console.log('car angle: ' + this.angle);
 	var piecePosition = positionInfo.piecePosition;
 
 	this.currentPiece = this.track.pieces[piecePosition.pieceIndex];
@@ -66,16 +64,12 @@ Car.prototype.updateCarPosition = function(positionInfoArray) {
 	// If the car entered in a piece that is a switch or bend, 
 	// i'll enable the checkSwitch flag to verify for the possible next switch;
 	if(!!this.lastPiece && (this.lastPiece.index != this.currentPiece.index) && (this.currentPiece.switch || this.currentPiece.type == "B")) {
-		this.checkSwitch = true;
+		this.driver.checkSwitch = true;
 	}
 	
 	this.inPieceDistance = piecePosition.inPieceDistance;
 	this.lap = piecePosition.lap;
 };
-
-Car.prototype.getThrottle = function() {
-	return this.driver.drive(this);
-}
 
 // Speed in distance per tick;
 Car.prototype.speed = function() {   
@@ -116,35 +110,6 @@ Car.prototype.distanceToBend = function() {
 	}
 	
 	return toNextBendDistance;
-}
-
-Car.prototype.calculateSwitchDirection = function() {
-	var nextBend = null;
-	var nextSwitch = null;
-	
-	var nextPieceIndex = this.currentPiece.index + 1;
-	while(true) {
-		if(this.track.pieces.length <= nextPieceIndex)
-			nextPieceIndex = 0;
-		
-		var nextPiece = this.track.pieces[nextPieceIndex];
-	
-		if(nextPiece.switch) {
-			nextSwitch = nextPiece;
-		} else if (nextPiece.type == "B") {
-			nextBend = nextPiece;
-			break;
-		}
-		
-		nextPieceIndex++;
-	}
-	
-	// Only calculate the direction if a switch were found before the next bend.
-	if(!!nextSwitch) {
-		return (nextBend.angle > 0) ? 'Right' : 'Left';
-	}
-	
-	return null;
 }
 
 Car.prototype.inLastStraight = function(){
