@@ -116,11 +116,11 @@ Driver.prototype.canTurbo = function() {
 	var distanceToBend = car.distanceToBend();
 	// The distance the car will travel while on turbo is determined by the following formula:
 	// Distance = Acc * TurboFactor * (Duration ^ 2)
-	var distanceInTurbo = (currentAcc * car.turboFactor * Math.pow(car.turboDuration, 2));
+	var distanceInTurbo = (2 * currentAcc * car.turboFactor * Math.pow(car.turboDuration, 2));
 	// We have to know as well at what distance from the bend the car will begin to break...
 	
 	// If the distance to the next bend is greater than the distance the car will travel in Turbo, turbo away!
-	return (distanceToBend > distanceInTurbo*2);
+	return (distanceToBend > distanceInTurbo);
 }
 
 // ***** Switch intelligence ***** //
