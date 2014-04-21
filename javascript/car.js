@@ -22,7 +22,8 @@ function Car(data, track) {
 	this.track = track;
 	
 	this.angle = null;
-	this.currentPiece = null;
+    this.currentPiece = null;
+    this.currentPieceIndex = 0;
 	this.inPieceDistance = null;
 	this.lane = null;
 	this.lap = null;
@@ -31,8 +32,25 @@ function Car(data, track) {
 	this.lastInPieceDistance = 0.0;
 	this.lastSpeed = 0.0;
 	this.acceleration = 0.0;
+
+    this.turboAvailable = false;
+    this.turboDurationMilliseconds = 0.0;
+    this.turboDurationTicks = 0.0
+    this.turboFactor = 1.0;
 	
 	this.driver = new Driver();
+}
+
+Car.prototype.updateTurboInfo = function(turboInfo){
+    this.turboDurationMilliseconds = turboInfo.turboDurationMilliseconds;
+    this.turboDurationTicks = turboInfo.turboDurationTicks;
+    this.turboFactor = turboInfo.turboFactor;
+
+    // If the factor is less than 1, then we can say the turbo will get the car slower, right?
+    // So, even just for now, I'll make sure we don't get into jokes and only go turbo if
+    // multiplier is equal to or greater than 1
+    if(this.turboFactor >= 1)
+        this.turboAvailable = true;
 }
 
 Car.prototype.updateCarPosition = function(positionInfoArray) {
@@ -40,7 +58,8 @@ Car.prototype.updateCarPosition = function(positionInfoArray) {
   
 	this.angle = positionInfo.angle;
 	var piecePosition = positionInfo.piecePosition;
-	
+
+    this.currentPieceIndex = piecePosition.pieceIndex;
 	this.currentPiece = this.track.pieces[piecePosition.pieceIndex];
 	this.lane = this.track.lanes[piecePosition.lane.endLaneIndex];
 	
@@ -90,6 +109,15 @@ Car.prototype.distanceToBend = function() {
 	}
 	
 	return toNextBendDistance;
+}
+
+Car.prototype.inLastStraight = function(){
+    // To see when the car is in last straight and never stop throttling
+    if(this.track.lastStraightIndex <= this.currentPieceIndex && this.lap >= this.track.laps - 1){
+        console.log("Last straight! Step on it!")
+        return true;
+    }
+    return false;
 }
 
 module.exports = Car;
