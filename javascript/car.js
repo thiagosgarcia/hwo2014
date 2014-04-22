@@ -26,7 +26,9 @@ function Car(data, track) {
 	this.inPieceDistance = null;
 	this.lane = null;
 	this.lap = null;
-	
+
+    this.nextBendPiece = null;
+
 	this.lastPiece = null;
 	this.lastInPieceDistance = 0.0;
 	this.lastSpeed = 0.0;
@@ -55,6 +57,22 @@ Car.prototype.updateCarPosition = function(positionInfoArray) {
 	if(!!this.lastPiece && (this.lastPiece.index != this.currentPiece.index) && (this.currentPiece.switch || this.currentPiece.type == "B")) {
 		this.driver.checkSwitch = true;
 	}
+
+	this.inPieceDistance = piecePosition.inPieceDistance;
+	this.lap = piecePosition.lap;
+
+    var i = piecePosition.pieceIndex;
+    while(true){
+        if(++ i >= this.track.pieces.length)
+            i = 0;
+        if(this.track.pieces[i].type !== "S"){
+            this.nextBendPiece = this.track.pieces[i];
+            break;
+        }
+        // to prevent infinite loop, if it gets to the beginning again, it stops
+        if(i == piecePosition.pieceIndex)
+            break;
+    }
 };
 
 Car.prototype.rechargeTurbo = function(turboInfo) {

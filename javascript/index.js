@@ -4,17 +4,21 @@ var JSONStream = require('JSONStream');
 
 var serverHost = "senna.helloworldopen.com";
 var serverPort = 8091;
-var botName = "Working Minds";
+var botName = "WKM";
 var botKey = "rSOwFpIm+ddrdQ";
 
 console.log("I'm", botName, "and connect to", serverHost + ":" + serverPort);
 
 client = net.connect(serverPort, serverHost, function() {
   return send({
-    msgType: "join",
+    msgType: "joinRace",
     data: {
+        botId:{
       name: botName,
       key: botKey
+    }
+        ,trackName: "germany"
+        ,carCount: 1
     }
   });
 });
@@ -62,6 +66,9 @@ function race(info, gameTick) {
 		+" | acc " + myCar.acceleration
 		+" | lap " + myCar.lap
 		+" | nextBend " + myCar.distanceToBend()
+        //+"\n | Piece: lenght " + myCar.currentPiece.lengthInLane(myCar.lane)
+        //+" . radius " + myCar.currentPiece.radius
+        //+" . angle " + myCar.currentPiece.angle
 		//+" | nextSwitch " + leftToNextSwitch(piecePosition.pieceIndex, carLane, piecePosition)
 	);
 	
