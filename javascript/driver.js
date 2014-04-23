@@ -20,7 +20,16 @@ Driver.prototype.drive = function() {
 }
 
 function targetSpeedCalc(nextBendPiece, lane){
-    return 9 - (Math.abs(nextBendPiece.angle) / 10) + (nextBendPiece.lengthInLane(lane) / (nextBendPiece.angle * 2));
+    // New, beautiful and optimized calculation
+    const gravity = 9.78 ;
+    const ticksPerSecond = 6.0;
+
+    var radiusInLane = nextBendPiece.radius + nextBendPiece.laneDistanceFromCenter(lane);
+    var maxFriction = Math.sqrt( radiusInLane * (Math.abs(nextBendPiece.angle) / gravity ))
+    return ( Math.sqrt( maxFriction * radiusInLane ) / ticksPerSecond ) ;
+
+    // Old an ugly code
+    //return 49 / (Math.abs(nextBendPiece.angle) / 9) - (nextBendPiece.lengthInLane(lane) / (nextBendPiece.angle * 2));
 }
 
 function isTimeToBreak(currentSpeed, distanceToBend, targetSpeed){
@@ -35,11 +44,11 @@ function isTimeToBreak(currentSpeed, distanceToBend, targetSpeed){
     // 4 - 5 value makes the pilot break pretty securely and close to the bend.
     // Smaller values may be used when the car is in the inner lane, greater when it is in the outer lane
     // carefully, of course
-    var breakingTicksDelay = 5;
+    var breakingTicksDelay = 0;
 
     // lower speeds needs less breaking tick delay
-    if(targetSpeed < 5)
-        breakingTicksDelay--;
+    //if(targetSpeed < 5)
+    //    breakingTicksDelay--;
 
     var speedDiff = currentSpeed - targetSpeed;
     // If the speed is less than target speed there's no need to break
@@ -76,7 +85,7 @@ Driver.prototype.driveForStraight = function() {
     // (to be implemented)
     var targetSpeed = targetSpeedCalc(car.nextBendPiece, car.lane);
     //var targetSpeed = 4.5;
-    console.log("targetspeed: " + targetSpeed);
+    console.log("targetspeed: " + targetSpeed + " angle: " + car.angle);
 
     if ( !isTimeToBreak(currentSpeed, distanceToBend, targetSpeed) || car.inLastStraight()){
         // To use more efficiently the turbo, the driver will only activate it when the car is at the
@@ -94,8 +103,24 @@ Driver.prototype.driveForStraight = function() {
     return 0.0;
 }
 
+function speedInBend(car, currentPiece){
+    if(Math.abs(car.angle) < Math.abs(car.lastAngle))
+        return 1;
+
+    var speedInBend = Math.abs(car.angle) / 35;
+
+    if(speedInBend > 0.7)
+        speedInBend = 1.0;
+    else if(speedInBend < 0.3)
+        speedInBend = 0.0;
+
+    return Math.abs(1 - speedInBend);
+
+}
+
 Driver.prototype.driveForBend = function() {
     var currentSpeed = this.car.speed();
+    var distanceToBend = this.car.distanceToBend();
     var currentAcc = this.car.acceleration;
 
     // Target speed to entering bends. It'll be calculated using bend radius and size
@@ -103,21 +128,11 @@ Driver.prototype.driveForBend = function() {
     var targetSpeed = targetSpeedCalc(this.car.nextBendPiece, this.car.lane);
     console.log("targetspeed: " + targetSpeed + " angle: " + this.car.angle);
 
-    var maxAngularSpeed = this.car.angle / 45;
-    if(maxAngularSpeed > 0.6)
-        maxAngularSpeed = 1.0;
-    if(maxAngularSpeed < 0.0)
-        maxAngularSpeed = 0.0;
-    maxAngularSpeed = Math.abs(1 - maxAngularSpeed);
 
-	if (currentSpeed < targetSpeed) {
-        return maxAngularSpeed;
-
-        //return 1.0;
-	} else if (currentAcc < 0) {
-		return 0.0;
+	if ( currentSpeed < targetSpeed) {
+        return speedInBend(this.car, this.car.currentPiece);
+        //        return 1.0;
 	}
-    
 	return 0.0;
 }
 

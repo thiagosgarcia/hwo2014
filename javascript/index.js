@@ -61,7 +61,7 @@ function race(info, gameTick) {
 	}
 	throttle(driver.drive());
 	
-	log("tick " + gameTick + ""
+	log("tick " + gameTick + " : " + (Math.floor((gameTick / 60 % 100)*100) /100)  + " s"
 		+" | speed " + myCar.lastSpeed
 		+" | acc " + myCar.acceleration
 		+" | lap " + myCar.lap

@@ -20,8 +20,9 @@ function Car(data, track) {
 	this.color = data.color;
 	
 	this.track = track;
-	
-	this.angle = null;
+
+    this.angle = null;
+    this.lastAngle = null;
     this.currentPiece = null;
 	this.inPieceDistance = null;
 	this.lane = null;
@@ -43,7 +44,8 @@ function Car(data, track) {
 
 Car.prototype.updateCarPosition = function(positionInfoArray) {
 	var positionInfo = getCarPositionInfo(this, positionInfoArray);
-  
+
+    this.lastAngle = this.angle;
 	this.angle = positionInfo.angle;
 	var piecePosition = positionInfo.piecePosition;
 
@@ -99,31 +101,31 @@ Car.prototype.speed = function() {
     this.lastSpeed = currentSpeed;
     this.lastInPieceDistance = this.inPieceDistance;
     this.lastPiece = this.currentPiece;
-    
+
     return currentSpeed;
 }
 
 Car.prototype.distanceToBend = function() {
 	var toNextPieceDistance = this.currentPiece.lengthInLane(this.lane) - this.inPieceDistance;
 	var toNextBendDistance = toNextPieceDistance;
-	
+
 	var nextPieceIndex = this.currentPiece.index + 1;
 	while(true) {
 		if(this.track.pieces.length <= nextPieceIndex)
 			nextPieceIndex = 0;
-		
+
 		var nextPiece = this.track.pieces[nextPieceIndex];
-		
+
 		// Found the next Bend, stop the loop;
 		if(nextPiece.type == "B") {
 			break;
 		}
-			
+
 		// Increment the next Straight length and loop again;
 		toNextBendDistance += nextPiece.length;
 		nextPieceIndex++;
 	}
-	
+
 	return toNextBendDistance;
 }
 
