@@ -18,7 +18,11 @@ function Track(data, raceInfo) {
 	this.id = data.id;
 	this.name = data.name;
 	this.lanes = data.lanes;
-    this.laps = raceInfo.laps;
+
+    // If this is a qualifying laps are not defined. As we use them, just a workaround to simulate
+    // as if there were as many laps as seconds
+    this.laps = raceInfo.laps === undefined ? raceInfo.durationMs / 1000 : raceInfo.laps;
+    this.durationMs = raceInfo.durationMs;
 	
 	this.pieces = buildTrackPieces(data.pieces);
 
