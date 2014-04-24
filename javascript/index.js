@@ -14,10 +14,11 @@ client = net.connect(serverPort, serverHost, function() {
     msgType: "joinRace",
     data: {
         botId:{
-      name: botName,
-      key: botKey
-    }
-        ,trackName: "germany"
+          name: botName,
+          key: botKey,
+          color: "green"
+        }
+        ,trackName: "keimola"
         ,carCount: 1
     }
   });

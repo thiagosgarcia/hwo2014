@@ -29,6 +29,7 @@ function Car(data, track) {
 	this.lap = null;
 
     this.nextBendPiece = null;
+    this.nextSwitchPiece = null;
 
 	this.lastPiece = null;
 	this.lastInPieceDistance = 0.0;
@@ -69,6 +70,20 @@ Car.prototype.updateCarPosition = function(positionInfoArray) {
             i = 0;
         if(this.track.pieces[i].type !== "S"){
             this.nextBendPiece = this.track.pieces[i];
+            break;
+        }
+        // to prevent infinite loop, if it gets to the beginning again, it stops
+        if(i == piecePosition.pieceIndex)
+            break;
+    }
+    // Different loops for different types to prevent confusing (getting nothing if the loop ends earlier
+    // or getting wrong data if it does not stop for one variable when should have been stopped for another)
+    i = piecePosition.pieceIndex;
+    while(true){
+        if(++ i >= this.track.pieces.length)
+            i = 0;
+        if(!!this.track.pieces[i].switch){
+            this.nextSwitchPiece = this.track.pieces[i];
             break;
         }
         // to prevent infinite loop, if it gets to the beginning again, it stops
