@@ -19,6 +19,55 @@ Driver.prototype.drive = function() {
     return 1;
 }
 
+Driver.prototype.driveForStraight = function() {
+	var car = this.car;
+    var distanceToBend = car.distanceToBend();
+    var currentSpeed = car.speed();
+    var turboDurationTicks = car.turboDurationTicks;
+    var turboFactor = car.turboFactor;
+
+    // Target speed to entering bends. It'll be calculated using bend radius and size
+    // (to be implemented)
+    var targetSpeed = targetSpeedCalc(car);
+    //var targetSpeed = 4.5;
+    console.log("targetSpeed: " + targetSpeed + " carAngle: " + car.angle);
+
+    if ( !isTimeToBreak(currentSpeed, distanceToBend, targetSpeed) || car.inLastStraight()){
+        // To use more efficiently the turbo, the driver will only activate it when the car is at the
+        // first piece of the biggest straight in the track or in the lastStraight
+        if(car.turboAvailable && ( car.track.biggestStraightIndex == car.currentPiece.index || car.inLastStraight() )){
+            car.turboAvailable = false;
+            return 2.0; // to activate turbo in throttle function
+        }
+
+    	return 1.0;
+    } else if (currentSpeed < targetSpeed) {
+    	return 0.5;
+    }
+    
+    return 0.0;
+}
+
+Driver.prototype.driveForBend = function() {
+    var car = this.car;
+    var currentSpeed = car.speed();
+    var distanceToBend = car.distanceToBend();
+    var currentAcc = car.acceleration;
+
+    // Target speed to entering bends. It'll be calculated using bend radius and size
+    // (to be implemented)
+    var targetSpeed = targetSpeedCalc(car);
+    console.log("targetSpeed: " + targetSpeed + " carAngle: " + car.angle);
+
+	if ( currentSpeed < targetSpeed) {
+        return speedInBend(car);
+        //        return 1.0;
+	}
+	return 0.0;
+}
+
+// ***** Speed calculations ***** //
+
 function isTimeToBreak(currentSpeed, distanceToBend, targetSpeed){
 
     // BreakingFactor is the relation between speed and negative acceleration when the car is
@@ -27,12 +76,14 @@ function isTimeToBreak(currentSpeed, distanceToBend, targetSpeed){
     // possibility to have a value for each track
     var breakingFactor = 49;
 
+    // Now with the target speed adjusted, I don't see this use, but I'll let it here for now
     // This is a delay for breaking. Less, the pilot breaks earlier, more the pilot breaks later.
     // 4 - 5 value makes the pilot break pretty securely and close to the bend.
     // Smaller values may be used when the car is in the inner lane, greater when it is in the outer lane
     // carefully, of course
     var breakingTicksDelay = 0;
 
+    // Now with the target speed adjusted, I don't see this use, but I'll let it here for now
     // lower speeds needs less breaking tick delay
     //if(targetSpeed < 5)
     //    breakingTicksDelay--;
@@ -62,55 +113,10 @@ function isTimeToBreak(currentSpeed, distanceToBend, targetSpeed){
     return false;
 }
 
-Driver.prototype.driveForStraight = function() {
-	var car = this.car;
-    var distanceToBend = car.distanceToBend();
-    var currentSpeed = car.speed();
-
-    if ( !isTimeToBreak(currentSpeed, distanceToBend) || car.inLastStraight()){
-    // Target speed to entering bends. It'll be calculated using bend radius and size
-    // (to be implemented)
-    var targetSpeed = targetSpeedCalc(car);
-    //var targetSpeed = 4.5;
-    console.log("targetspeed: " + targetSpeed + " angle: " + car.angle);
-
-    if ( !isTimeToBreak(currentSpeed, distanceToBend, targetSpeed) || car.inLastStraight()){
-        // To use more efficiently the turbo, the driver will only activate it when the car is at the
-        // first piece of the biggest straight in the track or in the lastStraight
-        if(car.turboAvailable && ( car.track.biggestStraightIndex == car.currentPieceIndex || car.inLastStraight() )){
-            car.turboAvailable = false;
-            return 2.0; // to activate turbo in throttle function
-        }
-
-    	return 1.0;
-    } else if (currentSpeed < targetSpeed) {
-    	return 0.5;
-    }
-    
-    return 0.0;
-}
-
-Driver.prototype.driveForBend = function() {
-    var currentSpeed = this.car.speed();
-    var distanceToBend = this.car.distanceToBend();
-    var currentAcc = this.car.acceleration;
-
-    // Target speed to entering bends. It'll be calculated using bend radius and size
-    // (to be implemented)
-    var targetSpeed = targetSpeedCalc(this.car);
-    console.log("targetspeed: " + targetSpeed + " angle: " + this.car.angle);
-
-	if ( currentSpeed < targetSpeed) {
-        return speedInBend(this.car, this.car.currentPiece);
-        //        return 1.0;
-	}
-	return 0.0;
-}
-
-function speedInBend(car, currentPiece){
+function speedInBend(car){
     var angleAbs = Math.abs(car.angle);
     var lastAngleAbs = Math.abs(car.lastAngle);
-    
+
     if(angleAbs < lastAngleAbs)
         return 1;
 
