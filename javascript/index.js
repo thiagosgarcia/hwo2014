@@ -2,7 +2,7 @@
 var net = require("net");
 var JSONStream = require('JSONStream');
 
-var serverHost = "localhost";
+var serverHost = "senna.helloworldopen.com";
 var serverPort = 8091;
 var botName = "Working Minds";
 var botKey = "rSOwFpIm+ddrdQ";

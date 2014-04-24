@@ -4,6 +4,7 @@ source ../config
 
 if [ "$BUILD_MODE" == "offline" ]; then
   echo "offline build"
+  node index.js
 else
   npm install
 fi
