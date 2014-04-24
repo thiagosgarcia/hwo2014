@@ -20,13 +20,17 @@ function Car(data, track) {
 	this.color = data.color;
 	
 	this.track = track;
-	
-	this.angle = null;
+
+    this.angle = null;
+    this.lastAngle = null;
     this.currentPiece = null;
 	this.inPieceDistance = null;
 	this.lane = null;
 	this.lap = null;
-	
+
+    this.nextBendPiece = null;
+    this.nextSwitchPiece = null;
+
 	this.lastPiece = null;
 	this.lastInPieceDistance = 0.0;
 	this.lastSpeed = 0.0;
@@ -41,7 +45,8 @@ function Car(data, track) {
 
 Car.prototype.updateCarPosition = function(positionInfoArray) {
 	var positionInfo = getCarPositionInfo(this, positionInfoArray);
-  
+
+    this.lastAngle = this.angle;
 	this.angle = positionInfo.angle;
 	var piecePosition = positionInfo.piecePosition;
 
@@ -55,6 +60,36 @@ Car.prototype.updateCarPosition = function(positionInfoArray) {
 	if(!!this.lastPiece && (this.lastPiece.index != this.currentPiece.index) && (this.currentPiece.switch || this.currentPiece.type == "B")) {
 		this.driver.checkSwitch = true;
 	}
+
+	this.inPieceDistance = piecePosition.inPieceDistance;
+	this.lap = piecePosition.lap;
+
+    var i = piecePosition.pieceIndex;
+    while(true){
+        if(++ i >= this.track.pieces.length)
+            i = 0;
+        if(this.track.pieces[i].type !== "S"){
+            this.nextBendPiece = this.track.pieces[i];
+            break;
+        }
+        // to prevent infinite loop, if it gets to the beginning again, it stops
+        if(i == piecePosition.pieceIndex)
+            break;
+    }
+    // Different loops for different types to prevent confusing (getting nothing if the loop ends earlier
+    // or getting wrong data if it does not stop for one variable when should have been stopped for another)
+    i = piecePosition.pieceIndex;
+    while(true){
+        if(++ i >= this.track.pieces.length)
+            i = 0;
+        if(!!this.track.pieces[i].switch){
+            this.nextSwitchPiece = this.track.pieces[i];
+            break;
+        }
+        // to prevent infinite loop, if it gets to the beginning again, it stops
+        if(i == piecePosition.pieceIndex)
+            break;
+    }
 };
 
 Car.prototype.rechargeTurbo = function(turboInfo) {
@@ -81,31 +116,31 @@ Car.prototype.speed = function() {
     this.lastSpeed = currentSpeed;
     this.lastInPieceDistance = this.inPieceDistance;
     this.lastPiece = this.currentPiece;
-    
+
     return currentSpeed;
 }
 
 Car.prototype.distanceToBend = function() {
 	var toNextPieceDistance = this.currentPiece.lengthInLane(this.lane) - this.inPieceDistance;
 	var toNextBendDistance = toNextPieceDistance;
-	
+
 	var nextPieceIndex = this.currentPiece.index + 1;
 	while(true) {
 		if(this.track.pieces.length <= nextPieceIndex)
 			nextPieceIndex = 0;
-		
+
 		var nextPiece = this.track.pieces[nextPieceIndex];
-		
+
 		// Found the next Bend, stop the loop;
 		if(nextPiece.type == "B") {
 			break;
 		}
-			
+
 		// Increment the next Straight length and loop again;
 		toNextBendDistance += nextPiece.length;
 		nextPieceIndex++;
 	}
-	
+
 	return toNextBendDistance;
 }
 

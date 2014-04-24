@@ -19,10 +19,56 @@ Driver.prototype.drive = function() {
     return 1;
 }
 
-function isTimeToBreak(currentSpeed, distanceToBend){
+Driver.prototype.driveForStraight = function() {
+	var car = this.car;
+    var distanceToBend = car.distanceToBend();
+    var currentSpeed = car.speed();
+    var turboDurationTicks = car.turboDurationTicks;
+    var turboFactor = car.turboFactor;
+
     // Target speed to entering bends. It'll be calculated using bend radius and size
     // (to be implemented)
-    var targetSpeed = 6.5;
+    var targetSpeed = targetSpeedCalc(car);
+    //var targetSpeed = 4.5;
+    console.log("targetSpeed: " + targetSpeed + " carAngle: " + car.angle);
+
+    if ( !isTimeToBreak(currentSpeed, distanceToBend, targetSpeed) || car.inLastStraight()){
+        // To use more efficiently the turbo, the driver will only activate it when the car is at the
+        // first piece of the biggest straight in the track or in the lastStraight
+        if(car.turboAvailable && ( car.track.biggestStraightIndex == car.currentPiece.index || car.inLastStraight() )){
+            car.turboAvailable = false;
+            return 2.0; // to activate turbo in throttle function
+        }
+
+    	return 1.0;
+    } else if (currentSpeed < targetSpeed) {
+    	return 0.5;
+    }
+    
+    return 0.0;
+}
+
+Driver.prototype.driveForBend = function() {
+    var car = this.car;
+    var currentSpeed = car.speed();
+    var distanceToBend = car.distanceToBend();
+    var currentAcc = car.acceleration;
+
+    // Target speed to entering bends. It'll be calculated using bend radius and size
+    // (to be implemented)
+    var targetSpeed = targetSpeedCalc(car);
+    console.log("targetSpeed: " + targetSpeed + " carAngle: " + car.angle);
+
+	if ( currentSpeed < targetSpeed) {
+        return speedInBend(car);
+        //        return 1.0;
+	}
+	return 0.0;
+}
+
+// ***** Speed calculations ***** //
+
+function isTimeToBreak(currentSpeed, distanceToBend, targetSpeed){
 
     // BreakingFactor is the relation between speed and negative acceleration when the car is
     // fully breaking in a Straight piece.
@@ -30,11 +76,17 @@ function isTimeToBreak(currentSpeed, distanceToBend){
     // possibility to have a value for each track
     var breakingFactor = 49;
 
+    // Now with the target speed adjusted, I don't see this use, but I'll let it here for now
     // This is a delay for breaking. Less, the pilot breaks earlier, more the pilot breaks later.
     // 4 - 5 value makes the pilot break pretty securely and close to the bend.
     // Smaller values may be used when the car is in the inner lane, greater when it is in the outer lane
     // carefully, of course
-    const breakingTicksDelay = 5;
+    var breakingTicksDelay = 0;
+
+    // Now with the target speed adjusted, I don't see this use, but I'll let it here for now
+    // lower speeds needs less breaking tick delay
+    //if(targetSpeed < 5)
+    //    breakingTicksDelay--;
 
     var speedDiff = currentSpeed - targetSpeed;
     // If the speed is less than target speed there's no need to break
@@ -54,38 +106,67 @@ function isTimeToBreak(currentSpeed, distanceToBend){
     //If the car needs more ticks to break than the ticks left to achieve the target speed,
     // then it is time to break, otherwise, step on it!
     if( ticksLeftToBendOnCurrentSpeed + breakingTicksDelay < ticksLeftToTargetSpeed ){
-        console.log("ticksLeftToBendOnCurrentSpeed: " + ticksLeftToBendOnCurrentSpeed +
-            " ticksLeftToTargetSpeed: " + ticksLeftToTargetSpeed)
+        //console.log("ticksLeftToBendOnCurrentSpeed: " + ticksLeftToBendOnCurrentSpeed +
+        //    " ticksLeftToTargetSpeed: " + ticksLeftToTargetSpeed)
         return true;
     }
     return false;
 }
 
-Driver.prototype.driveForStraight = function() {
-	var car = this.car;
-    var distanceToBend = car.distanceToBend();
-    var currentSpeed = car.speed();
+function speedInBend(car){
+    var angleAbs = Math.abs(car.angle);
+    var lastAngleAbs = Math.abs(car.lastAngle);
 
-    if ( !isTimeToBreak(currentSpeed, distanceToBend) || car.inLastStraight()){
-    	return 1.0;
-    } else if (currentSpeed < 6.5) {
-    	return 0.5;
-    }
-    
-    return 0.0;
+    if(angleAbs < lastAngleAbs)
+        return 1;
+
+    var angleDiff = angleAbs - lastAngleAbs;
+    if(angleDiff > 35 * 0.1)
+        return 0;
+
+    var speedInBend = angleAbs / 35;
+
+    if(speedInBend > 0.7)
+        speedInBend = 1.0;
+    else if(speedInBend < 0.3)
+        speedInBend = 0.0;
+
+    return Math.abs(1 - speedInBend);
+
 }
 
-Driver.prototype.driveForBend = function() {
-    var currentSpeed = this.car.speed();
-    var currentAcc = this.car.acceleration;
+function targetSpeedCalc(car){
+    // New, beautiful and optimized calculation
 
-	if (currentSpeed < 6.425) {
-        return 1.0;
-	} else if (currentAcc < 0) {
-		return 0.0;
-	}
-    
-	return 0.0;
+    // First, initialize many constants
+    const gravity = 9.78 ;
+    const ticksPerSecond = 6.0;
+    const nextBendPiece = car.nextBendPiece;
+    const nextSwitchPiece = car.nextSwitchPiece;
+    const radius = car.nextBendPiece.radius;
+    const angle = car.nextBendPiece.angle;
+    const lane = car.lane;
+    const lanes = car.track.lanes;
+    const switchDirection = car.driver.determineSwitchDirection()
+
+    var laneDistanceFromCenter = 0.0;
+    if(nextBendPiece.index < nextSwitchPiece.index){
+        // If next bend is before the switch, next bend calc is for the actual lane
+        laneDistanceFromCenter = nextBendPiece.laneDistanceFromCenter(lane);
+    }else{
+        // If next bend is the next switch or the next switch is before the next bend we must calc
+        // the speed for the lane that the car will be
+        laneDistanceFromCenter  = switchDirection == null ? nextBendPiece.laneDistanceFromCenter(lane)
+            : switchDirection == 'Right' ?  nextBendPiece.laneDistanceFromCenter(lanes[lane.index + 1])
+            : nextBendPiece.laneDistanceFromCenter(lanes[lane.index - 1]);
+    }
+
+    //console.log(laneDistanceFromCenter + " <<-- " + nextBendPiece.laneDistanceFromCenter(lane))
+
+    var radiusInLane = radius + laneDistanceFromCenter;
+    var maxFriction = Math.sqrt( radiusInLane * (Math.abs(angle) / gravity ))
+    return ( Math.sqrt( maxFriction * radiusInLane ) / ticksPerSecond ) ;
+
 }
 
 // ***** Turbo intelligence ***** //
@@ -181,7 +262,7 @@ Driver.prototype.determineSwitchDirection = function() {
 		
 		// The shorter lane is more to the left of the center, switch Left.
 		if(car.lane.distanceFromCenter > shorterLane.distanceFromCenter) {
-			return 'Left';
+            return 'Left';
 		}
 		// The shorter lane is more to the right of the center, switch Right.
 		else if(car.lane.distanceFromCenter < shorterLane.distanceFromCenter) {
@@ -190,8 +271,7 @@ Driver.prototype.determineSwitchDirection = function() {
 		
 		// The lane the car is driving is already the shorter! Nothing to do here..
 	}
-	
-	return null;
+    return null;
 }
 
 module.exports = Driver;

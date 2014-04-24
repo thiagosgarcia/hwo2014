@@ -89,11 +89,14 @@ function race(info, gameTick) {
 	}
 	throttle(driver.drive());
 	
-	log("tick " + gameTick + ""
+	log("tick " + gameTick + " : " + (Math.floor((gameTick / 60 % 100)*100) /100)  + " s"
 		+" | speed " + myCar.lastSpeed
 		+" | acc " + myCar.acceleration
 		+" | lap " + myCar.lap
 		+" | nextBend " + myCar.distanceToBend()
+        //+"\n | Piece: lenght " + myCar.currentPiece.lengthInLane(myCar.lane)
+        //+" . radius " + myCar.currentPiece.radius
+        //+" . angle " + myCar.currentPiece.angle
 		//+" | nextSwitch " + leftToNextSwitch(piecePosition.pieceIndex, carLane, piecePosition)
 	);
 	
