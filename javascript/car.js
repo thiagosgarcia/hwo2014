@@ -23,12 +23,14 @@ function Car(data, track) {
 
     this.angle = null;
     this.lastAngle = null;
+    this.angleAcceleration = 0.0;
     this.currentPiece = null;
 	this.inPieceDistance = null;
 	this.lane = null;
 	this.lap = null;
 
     this.nextBendPiece = null;
+    this.nextDifferentPiece = null;
     this.nextSwitchPiece = null;
 
 	this.lastPiece = null;
@@ -48,6 +50,8 @@ Car.prototype.updateCarPosition = function(positionInfoArray) {
 
     this.lastAngle = this.angle;
 	this.angle = positionInfo.angle;
+    this.angleAcceleration = this.angle - this.lastAngle;
+
 	var piecePosition = positionInfo.piecePosition;
 
 	this.currentPiece = this.track.pieces[piecePosition.pieceIndex];
@@ -90,6 +94,22 @@ Car.prototype.updateCarPosition = function(positionInfoArray) {
         if(i == piecePosition.pieceIndex)
             break;
     }
+    // nextDifferentPiece indicates when the car arrives to a bend that the angle or radius, or even direction
+    // is different than current
+    i = piecePosition.pieceIndex;
+    while(true){
+        if(++ i >= this.track.pieces.length)
+            i = 0;
+        var pieceToVerify = this.track.pieces[i];
+        if(pieceToVerify.angle !== this.currentPiece ||
+            pieceToVerify.radius !== this.currentPiece){
+            this.nextDifferentPiece = pieceToVerify;
+            break;
+        }
+        // to prevent infinite loop, if it gets to the beginning again, it stops
+        if(i == piecePosition.pieceIndex)
+            break;
+    }
 };
 
 Car.prototype.rechargeTurbo = function(turboInfo) {
@@ -121,27 +141,51 @@ Car.prototype.speed = function() {
 }
 
 Car.prototype.distanceToBend = function() {
-	var toNextPieceDistance = this.currentPiece.lengthInLane(this.lane) - this.inPieceDistance;
-	var toNextBendDistance = toNextPieceDistance;
+    var toNextPieceDistance = this.currentPiece.lengthInLane(this.lane) - this.inPieceDistance;
+    var toNextBendDistance = toNextPieceDistance;
 
-	var nextPieceIndex = this.currentPiece.index + 1;
-	while(true) {
-		if(this.track.pieces.length <= nextPieceIndex)
-			nextPieceIndex = 0;
+    var nextPieceIndex = this.currentPiece.index + 1;
+    while(true) {
+        if(this.track.pieces.length <= nextPieceIndex)
+            nextPieceIndex = 0;
 
-		var nextPiece = this.track.pieces[nextPieceIndex];
+        var nextPiece = this.track.pieces[nextPieceIndex];
 
-		// Found the next Bend, stop the loop;
-		if(nextPiece.type == "B") {
-			break;
-		}
+        // Found the next Bend, stop the loop;
+        if(nextPiece.type == "B") {
+            break;
+        }
 
-		// Increment the next Straight length and loop again;
-		toNextBendDistance += nextPiece.length;
-		nextPieceIndex++;
-	}
+        // Increment the next Straight length and loop again;
+        toNextBendDistance += nextPiece.length;
+        nextPieceIndex++;
+    }
 
-	return toNextBendDistance;
+    return toNextBendDistance;
+}
+
+Car.prototype.distanceToPiece = function(aPiece) {
+    var toNextPieceDistance = this.currentPiece.lengthInLane(this.lane) - this.inPieceDistance;
+    var toPieceDistance = toNextPieceDistance;
+
+    var nextPieceIndex = this.currentPiece.index + 1;
+    while(true) {
+        if(this.track.pieces.length <= nextPieceIndex)
+            nextPieceIndex = 0;
+
+        var nextPiece = this.track.pieces[nextPieceIndex];
+
+        // Found the next Bend, stop the loop;
+        if(nextPiece.index == aPiece.index) {
+            break;
+        }
+
+        // Increment the next Straight length and loop again;
+        toPieceDistance += nextPiece.length;
+        nextPieceIndex++;
+    }
+
+    return toPieceDistance;
 }
 
 Car.prototype.inLastStraight = function(){

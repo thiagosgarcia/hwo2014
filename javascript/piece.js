@@ -8,6 +8,10 @@ function getPieceType(data) {
   return "";
 }
 
+function getAngleInRadian(angle){
+    return angle * Math.PI / 180.0;
+}
+
 function Piece(data, index) {
   this.type = getPieceType(data);
   this.index = index;
@@ -15,6 +19,7 @@ function Piece(data, index) {
   this.length = data.length;
   this.radius = data.radius;
   this.angle = data.angle;
+  this.angleInRadians = getAngleInRadian(this.angle);
 
   this.switch = !!data.switch;
 }

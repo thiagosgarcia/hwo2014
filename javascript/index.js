@@ -4,7 +4,7 @@ var JSONStream = require('JSONStream');
 
 var serverHost = "senna.helloworldopen.com";
 var serverPort = 8091;
-var botName = "Working Minds";
+var botName = "WKM '45";
 var botKey = "rSOwFpIm+ddrdQ";
 
 console.log("I'm", botName, "and connect to", serverHost + ":" + serverPort);
@@ -18,7 +18,7 @@ client = net.connect(serverPort, serverHost, function() {
           key: botKey,
           color: "green"
         }
-        , trackName: "france"
+        , trackName: "germany"
         , carCount: 1
     }
   });
@@ -62,7 +62,7 @@ function race(info, gameTick) {
 	}
 	throttle(driver.drive());
 	
-	log("tick " + gameTick + " : " + (Math.floor((gameTick / 60 % 100)*100) /100)  + " s"
+	log("tick " + gameTick + " : " + (Math.floor((gameTick / (60) % 100)*100) /100)  + " s"
 		+" | speed " + myCar.lastSpeed
 		+" | acc " + myCar.acceleration
 		+" | lap " + myCar.lap
@@ -111,6 +111,9 @@ function ping() {
 }
 
 function throttle(val) {
+    if(val == 2.0)
+        turbo();
+
     if(val > 1.0)
         val = 1.0;
     if(val < 0.0)
