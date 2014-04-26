@@ -33,13 +33,6 @@ Driver.prototype.driveForStraight = function() {
     console.log("targetSpeed: " + targetSpeed + " carAngle: " + car.angle);
 
     if ( !isTimeToBreak(currentSpeed, distanceToBend, targetSpeed) || car.inLastStraight()){
-        // To use more efficiently the turbo, the driver will only activate it when the car is at the
-        // first piece of the biggest straight in the track or in the lastStraight
-        if(car.turboAvailable && ( car.track.biggestStraightIndex == car.currentPiece.index || car.inLastStraight() )){
-            car.turboAvailable = false;
-            return 2.0; // to activate turbo in throttle function
-        }
-
     	return 1.0;
     } else if (currentSpeed < targetSpeed) {
     	return 0.5;

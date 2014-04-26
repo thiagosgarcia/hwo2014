@@ -18,7 +18,7 @@ client = net.connect(serverPort, serverHost, function() {
           key: botKey,
           color: "green"
         }
-        , trackName: "keimola"
+        , trackName: "france"
         , carCount: 1
     }
   });
@@ -47,33 +47,6 @@ function createCar(info) {
 	driver = myCar.driver;
 }
 
-function drive(piecePosition) {
-
-    var leftToTurn = leftToNextTurn(piecePosition.pieceIndex, piecePosition.lane, piecePosition);
-    var spd = speed(piecePosition);
-    var acc = Acceleration;
-    if (!isInTurn(piecePosition.pieceIndex)) {
-        if (leftToTurn > Math.pow(spd, 2)) {
-            throttle(1);
-        } else if (spd < 7.5) {
-            throttle((1 / spd) * 3);
-        } else {
-            throttle(0);
-        }
-    } else {
-        if (spd < 7) {
-            if (acc < 0 || spd < 6.5)
-                throttle(1);
-            else
-                throttle(0);
-        } else if (acc > 0) {
-            throttle((1 / spd) * 1, 7);
-        } else {
-            throttle(1);
-        }
-
-    }
-}
 function gameInit(info) {
 	track = new Track(info.race.track, info.race.raceSession);
 	myCar.track = track;
