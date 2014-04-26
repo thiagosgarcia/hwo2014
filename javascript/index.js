@@ -2,24 +2,26 @@
 var net = require("net");
 var JSONStream = require('JSONStream');
 
+/*
 var serverHost = "senna.helloworldopen.com";
 var serverPort = 8091;
 var botName = "Working Minds";
 var botKey = "rSOwFpIm+ddrdQ";
+*/
+
+var serverHost = process.argv[2];
+var serverPort = process.argv[3];
+var botName = process.argv[4];
+var botKey = process.argv[5];
 
 console.log("I'm", botName, "and connect to", serverHost + ":" + serverPort);
 
 client = net.connect(serverPort, serverHost, function() {
   return send({
-    msgType: "joinRace",
+    msgType: "join",
     data: {
-        botId: {
-          name: botName,
-          key: botKey,
-          color: "green"
-        }
-        , trackName: "keimola"
-        , carCount: 1
+		name: botName,
+		key: botKey
     }
   });
 });
