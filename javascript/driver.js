@@ -3,6 +3,8 @@ var Car = require('./car.js');
 function Driver(car) {
 	this.car = car;
 	this.checkSwitch = true;
+	
+	this.bendFactor = 67500.0;
 }
 
 // ***** Throttle intelligence ***** //
@@ -53,8 +55,7 @@ Driver.prototype.driveForBend = function() {
     console.log("targetSpeed: " + targetSpeed + " carAngle: " + car.angle);
 
 	if ( currentSpeed < targetSpeed) {
-        return speedInBend(car);
-        //        return 1.0;
+        return this.speedInBend();
 	}
 	return 0.0;
 }
@@ -106,26 +107,22 @@ function isTimeToBreak(currentSpeed, distanceToBend, targetSpeed){
     return false;
 }
 
-function speedInBend(car){
+Driver.prototype.speedInBend = function() {
+	var car = this.car;
+	var currentPiece = car.currentPiece;
     var angleAbs = Math.abs(car.angle);
     var lastAngleAbs = Math.abs(car.lastAngle);
+    
+    var limitAngle = 60.0 - (this.bendFactor / Math.abs(currentPiece.angle * currentPiece.radius));
 
     if(angleAbs < lastAngleAbs)
-        return 1;
+        return 1.0;
 
     var angleDiff = angleAbs - lastAngleAbs;
-    if(angleDiff > 35 * 0.1)
-        return 0;
+    if(angleDiff > 4.0)
+        return 0.0;
 
-    var speedInBend = angleAbs / 35;
-
-    if(speedInBend > 0.7)
-        speedInBend = 1.0;
-    else if(speedInBend < 0.3)
-        speedInBend = 0.0;
-
-    return Math.abs(1 - speedInBend);
-
+    return 1.0 - (angleAbs / limitAngle);
 }
 
 function targetSpeedCalc(car){
@@ -190,7 +187,7 @@ Driver.prototype.canTurbo = function() {
 	var distanceToBend = car.distanceToBend();
 	// The distance the car will travel while on turbo is determined by the following formula:
 	// Distance = Acc * TurboFactor * (Duration ^ 2)
-	var distanceInTurbo = (2 * currentAcc * car.turboFactor * Math.pow(car.turboDuration, 2));
+	var distanceInTurbo = 400.0 //(2 * currentAcc * car.turboFactor * Math.pow(car.turboDuration, 2));
 	// We have to know as well at what distance from the bend the car will begin to break...
 	
 	// If the distance to the next bend is greater than the distance the car will travel in Turbo, turbo away!

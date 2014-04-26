@@ -56,7 +56,7 @@ function race(info, gameTick) {
 	myCar.updateCarPosition(info);
 	
 	// Only check for turbo and switch sends if the game is already started
-	if(!!gameTick) {	
+	if(!!gameTick && !!myCar.acceleration) {	
 		checkTurbo();
 		checkSwitch();
 	}
