@@ -128,6 +128,7 @@ Driver.prototype.speedInBend = function() {
 /*
  function speedInBend(car){
 
+ function speedInBend(car){
  const maxAngle = 45.0;
  var angleAbs = Math.abs(car.angle);
  var lastAngleAbs = Math.abs(car.lastAngle);
@@ -135,14 +136,17 @@ Driver.prototype.speedInBend = function() {
  if(willSlip(car, maxAngle))
  return 0;
 
- if(angleAbs < lastAngleAbs) // && car.nextDifferentPiece.angle <= car.currentPiece.angle)
+ if(angleAbs < lastAngleAbs && ( car.nextDifferentPiece.type == "B" && car.nextDifferentPiece.angle <= car.currentPiece.angle))
  return 1.0;
 
  var angleDiff = angleAbs - lastAngleAbs;
  if(angleDiff > maxAngle * 0.1)
  return 0.0;
 
- return 1.0 - angleAbs / maxAngle;
+ var speed = 1.0 - angleAbs / maxAngle;
+ if(speed > 0.7)
+ speed = 1;
+ return speed;
  }
  */
 
@@ -150,11 +154,10 @@ function willSlip(car, maxAngle){
     var angleAbs = Math.abs(car.angle);
     var lastAngleAbs = Math.abs(car.lastAngle);
     var ticksToNextDifferentPiece = car.distanceToPiece(car.nextDifferentPiece);
-    var ticksToAngleSixty = 0.0
-    ticksToAngleSixty = Math.abs((60.0 - angleAbs) / car.angleAcceleration);
+    var ticksToAngleSixty = Math.abs((60.0 - angleAbs) / car.angleAcceleration);
 
 
-    if(angleAbs > maxAngle / 6 && ticksToNextDifferentPiece > ticksToAngleSixty ){
+    if(angleAbs > maxAngle / 2 && ticksToNextDifferentPiece > ticksToAngleSixty ){
         console.log("ticksToNextDifferentPiece "+ ticksToNextDifferentPiece + " ticksToAngleSixty " + ticksToAngleSixty)
         return true;
     }
@@ -194,7 +197,15 @@ function targetSpeedCalc(car){
 
     var radiusInLane = radius + laneDistanceFromCenter;
     var maxFriction = Math.sqrt( radiusInLane * (Math.abs(angle) / gravity ))
-    return ( Math.sqrt( maxFriction * radiusInLane ) / 6 ) ;
+    var fasterSpeed = ( Math.sqrt( maxFriction * radiusInLane ) / 6.0 )
+
+
+    var radiusInLane = radius + laneDistanceFromCenter;
+    var targetSpeed = Math.sqrt( frictionFactor * radiusInLane * gravity) ;
+    var slowerSpeed = targetSpeed / 60.0;
+
+    var targetSpeed = fasterSpeed - slowerSpeed;
+    return  fasterSpeed - targetSpeed * 0.4;
 
 
     // Old calc
