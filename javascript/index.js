@@ -4,7 +4,7 @@ var JSONStream = require('JSONStream');
 
 var serverHost = "senna.helloworldopen.com";
 var serverPort = 8091;
-var botName = "WKM '45";
+var botName = "WKM";
 var botKey = "rSOwFpIm+ddrdQ";
 
 console.log("I'm", botName, "and connect to", serverHost + ":" + serverPort);
@@ -124,6 +124,15 @@ function throttle(val) {
         msgType: "throttle",
         data: val
     });
+
+    end = new Date();
+
+    if(start !== undefined && end !== undefined){
+        var executionTime = end.getUTCMilliseconds() - start.getUTCMilliseconds();
+        // If it took more than 60% of the time available, there's an alert
+        if(executionTime > (50 / 3) * 0.6)
+            console.log( "Execution time alert: " + (executionTime) + " ms of " + (Math.floor((50 / (3) % 100)*100) /100) + " available for each tick!")
+    }
 }
 
 function switchLane(val) {
@@ -143,9 +152,14 @@ function turbo() {
 		data: "Geronimoooooo!!!"
 	});
 }
-
+var start;
+var end;
 // ***** Race events listener ***** //
 jsonStream.on('data', function(data) {
+
+    start = new Date();
+
+
     var info = data['data'];
     
     switch(data.msgType) {
