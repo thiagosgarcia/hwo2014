@@ -50,16 +50,16 @@ function speedInBend(car){
     var lastAngleAbs = Math.abs(car.lastAngle);
 
     if(shouldBreak(car))
-        return 0;
+        return 0.0;
 
     if(willSlip(car, maxAngle))
-        return 0;
+        return 0.0;
 
     var angleDiff = angleAbs - lastAngleAbs;
     if(angleDiff <= 0 ) //&& car.nextDifferentPiece.angle <= car.currentPiece.angle)
         return 1.0;
 
-    if(angleDiff > maxAngle * 0.1)
+    if(angleDiff > maxAngle * 0.08)
         return 0.0;
 
     return 1.0 - angleAbs / maxAngle;
@@ -67,12 +67,15 @@ function speedInBend(car){
 
 function speedInStraight(car){
 
-    if ( !shouldBreak(car) ){
+    if ( !shouldBreak(car) ) {
         // To use more efficiently the turbo, the driver will only activate it when the car is at the
         // first piece of the biggest straight in the track or in the lastStraight
-        if(car.inLastStraight() && car.turboAvailable ){
-            car.turboAvailable = false;
-            return 2.0; // to activate turbo in throttle function
+        if (car.inLastStraight()) {
+            if (car.turboAvailable) {
+                car.turboAvailable = false;
+                return 2.0; // to activate turbo in throttle function
+            }
+            return 1.0;
         }
         return 1.0;
     }
@@ -98,7 +101,7 @@ function targetSpeedCalc(car, piece){
 
     var radiusInLane = radius + laneDistanceFromCenter;
     var maxFriction = Math.sqrt( radiusInLane * (Math.abs(angle) / gravity ));
-    return ( Math.sqrt( maxFriction * radiusInLane ) / 6 ) ;
+    return ( Math.sqrt( maxFriction * radiusInLane ) / 6 )  ;
 
 
     // Old calc
@@ -138,7 +141,6 @@ function calculateLaneDistanceFromCenter(car, piece){
 // ***** Breaking calculations ***** //
 
 function shouldBreak(car){
-
     var currentSpeed = car.speed();
     var distanceToBend = car.distanceToBend();
 
@@ -151,6 +153,9 @@ function shouldBreak(car){
     var targetSpeedForBendAhead = targetSpeedCalc(car, car.bendPieceAhead);
     var targetSpeedForBend2TimesAhead = targetSpeedCalc(car, car.bendPiece2TimesAhead);
 
+    if(car.inLastStraight())
+        return false;
+
     // Verify if it is time to break for the bend 2x ahead
     if(isTimeToBreak(currentSpeed, distanceToBend2TimesAhead, targetSpeedForBend2TimesAhead)){
         console.log(" breaking for bend 2x ahead... ")
@@ -162,8 +167,8 @@ function shouldBreak(car){
         return true;
     }
     // If it is in a bend, only verify the bend ahead speed. Logic for bend speed is in speed in bend function
-    if(car.currentPiece.type == "B")
-        return false;
+    //if(car.currentPiece.type == "B")
+    //    return false;
 
     // Verify if it is time to break for the next bend
     return isTimeToBreak(currentSpeed, distanceToBend, targetSpeed) || car.inLastStraight();

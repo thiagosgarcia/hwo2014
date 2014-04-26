@@ -18,7 +18,7 @@ client = net.connect(serverPort, serverHost, function() {
           key: botKey,
           color: "green"
         }
-        , trackName: "germany"
+        , trackName: "france"
         , carCount: 1
     }
   });

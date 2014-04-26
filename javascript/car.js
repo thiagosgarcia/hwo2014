@@ -72,28 +72,43 @@ Car.prototype.updateCarPosition = function(positionInfoArray) {
 
     var i = piecePosition.pieceIndex;
     var bendAheadFlag = 0;
+    // If it is true, it means that the loop has passed in a straight and the next bend, is another bend
+    var inStraight = false;
     while(true){
         if(++ i >= this.track.pieces.length)
             i = 0;
         var pieceToVerify = this.track.pieces[i];
-        if(pieceToVerify.type !== "S"){
+        if(pieceToVerify.type === "S")
+            inStraight = true;
+        else {
             if(bendAheadFlag == 0){
                 this.nextBendPiece = pieceToVerify;
                 bendAheadFlag++;
-            }else if(bendAheadFlag == 1 && (pieceToVerify.angle !== this.nextBendPiece.angle || pieceToVerify.radius !== this.nextBendPiece.radius)){
-                // THe easiest way to see the bend after the next
+            }else if(bendAheadFlag == 1 &&
+                    ((pieceToVerify.angle !== this.nextBendPiece.angle || pieceToVerify.radius !== this.nextBendPiece.radius)
+                    || inStraight)){
+                // The easiest way to see the bend after the next
                 this.bendPieceAhead = pieceToVerify;
                 bendAheadFlag++;
-            }else if(bendAheadFlag == 2 && (pieceToVerify.angle !== this.bendPieceAhead.angle || pieceToVerify.radius !== this.bendPieceAhead.radius)){
-                // THe easiest way to see the next 2 bends after
+            }else if(bendAheadFlag == 2 &&
+                    ((pieceToVerify.angle !== this.bendPieceAhead.angle || pieceToVerify.radius !== this.bendPieceAhead.radius)
+                    || inStraight)){
+                // The easiest way to see the next 2 bends after
                 this.bendPiece2TimesAhead = pieceToVerify;
                 break;
             }
+            inStraight = false;
         }
         // to prevent infinite loop, if it gets to the beginning again, it stops
         if(i == piecePosition.pieceIndex)
             break;
     }
+    // Prevent null objects on circular, or almost circular circuits
+    if(this.bendPieceAhead == null)
+        this.bendPieceAhead = this.nextBendPiece;
+    if(this.bendPiece2TimesAhead == null)
+        this.bendPiece2TimesAhead = this.bendPieceAhead;
+
     // Different loops for different types to prevent confusing (getting nothing if the loop ends earlier
     // or getting wrong data if it does not stop for one variable when should have been stopped for another)
     i = piecePosition.pieceIndex;
