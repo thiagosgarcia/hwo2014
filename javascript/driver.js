@@ -28,7 +28,7 @@ Driver.prototype.driveForStraight = function() {
     var targetSpeed = targetSpeedCalc(car, car.nextBendPiece);
     console.log("targetSpeed: " + targetSpeed + " carAngle: " + car.angle);
 
-    return speedInStraight(car);
+    return this.speedInStraight();
 }
 
 Driver.prototype.driveForBend = function() {
@@ -39,40 +39,69 @@ Driver.prototype.driveForBend = function() {
     var targetSpeed = targetSpeedCalc(car, car.nextBendPiece);
     console.log("targetSpeed: " + targetSpeed + " carAngle: " + car.angle);
 
-    return speedInBend(car);
+    return this.speedInBend();
 }
 
 // ***** Speed calculations ***** //
 
-function speedInBend(car){
-    const maxAngle = 45.0;
+Driver.prototype.speedInBend = function() {
+    var car = this.car;
+    var currentPiece = car.currentPiece;
     var angleAbs = Math.abs(car.angle);
     var lastAngleAbs = Math.abs(car.lastAngle);
 
-    if(shouldBreak(car))
+    var limitAngle = 60.0 - (this.bendFactor / Math.abs(currentPiece.angle * currentPiece.radius));
+
+    if(this.shouldBreak())
         return 0.0;
 
-    if(willSlip(car, maxAngle))
+    // To verify
+    if(willSlip(car, limitAngle))
         return 0.0;
 
-    var angleDiff = angleAbs - lastAngleAbs;
-    if(angleDiff <= 0 ) //&& car.nextDifferentPiece.angle <= car.currentPiece.angle)
+    if (angleAbs < lastAngleAbs)
         return 1.0;
 
-    if(angleDiff > maxAngle * 0.08)
+    var angleDiff = angleAbs - lastAngleAbs;
+    if (angleDiff > 4.0)
         return 0.0;
 
-    return 1.0 - angleAbs / maxAngle;
+    return 1.0 - (angleAbs / limitAngle);
 }
 
-function speedInStraight(car){
+// old speed in bend
+/*
 
-    if ( !shouldBreak(car) ) {
+ function speedInBend(car){
+ const maxAngle = 45.0;
+ var angleAbs = Math.abs(car.angle);
+ var lastAngleAbs = Math.abs(car.lastAngle);
+
+ if(shouldBreak(car))
+ return 0.0;
+
+ if(willSlip(car, maxAngle))
+ return 0.0;
+
+ var angleDiff = angleAbs - lastAngleAbs;
+ if(angleDiff <= 0 ) //&& car.nextDifferentPiece.angle <= car.currentPiece.angle)
+ return 1.0;
+
+ if(angleDiff > maxAngle * 0.08)
+ return 0.0;
+
+ return 1.0 - angleAbs / maxAngle;
+ }
+ */
+
+Driver.prototype.speedInStraight = function(){
+
+    if ( !this.shouldBreak() ) {
         // To use more efficiently the turbo, the driver will only activate it when the car is at the
         // first piece of the biggest straight in the track or in the lastStraight
-        if (car.inLastStraight()) {
-            if (car.turboAvailable) {
-                car.turboAvailable = false;
+        if (this.car.inLastStraight()) {
+            if (this.car.turboAvailable) {
+                this.car.turboAvailable = false;
                 return 2.0; // to activate turbo in throttle function
             }
             return 1.0;
@@ -81,38 +110,6 @@ function speedInStraight(car){
     }
 
     return 0.0;
-}
-
-function targetSpeedCalc(car, piece){
-    // New, beautiful and optimized calculation
-
-    // First, initialize many constants
-    const gravity = 9.78 ;
-    const secondsPerTick = 1/60;
-    const frictionFactor = 49;
-
-    const radius = piece.radius;
-    const radianAngle = piece.angleInRadians;
-    const angle = piece.angle;
-
-    var laneDistanceFromCenter = calculateLaneDistanceFromCenter(car, piece);
-
-    //console.log(laneDistanceFromCenter + " <<-- " + piece.laneDistanceFromCenter(lane))
-
-    var radiusInLane = radius + laneDistanceFromCenter;
-    var maxFriction = Math.sqrt( radiusInLane * (Math.abs(angle) / gravity ));
-    return ( Math.sqrt( maxFriction * radiusInLane ) / 6 )  ;
-
-
-    // Old calc
-    //var maxFriction = Math.sqrt( radiusInLane * (Math.abs(radianAngle) / gravity ))
-    //var targetSpeed = ( Math.sqrt( maxFriction * radiusInLane ) / 6 ) ;
-
-    // New calc (slower)
-    //var radiusInLane = radius + laneDistanceFromCenter;
-    //var targetSpeed = Math.sqrt( frictionFactor * radiusInLane * gravity) ;
-    //return targetSpeed / 60;
-
 }
 
 // ***** Direction calculations **** //
@@ -140,7 +137,8 @@ function calculateLaneDistanceFromCenter(car, piece){
 
 // ***** Breaking calculations ***** //
 
-function shouldBreak(car){
+Driver.prototype.shouldBreak = function(){
+    var car = this.car;
     var currentSpeed = car.speed();
     var distanceToBend = car.distanceToBend();
 
@@ -219,49 +217,6 @@ function isTimeToBreak(currentSpeed, distanceToBend, targetSpeed){
     return false;
 }
 
-Driver.prototype.speedInBend = function() {
-    var car = this.car;
-    var currentPiece = car.currentPiece;
-    var angleAbs = Math.abs(car.angle);
-    var lastAngleAbs = Math.abs(car.lastAngle);
-
-    var limitAngle = 60.0 - (this.bendFactor / Math.abs(currentPiece.angle * currentPiece.radius));
-
-    if (angleAbs < lastAngleAbs)
-        return 1.0;
-
-    var angleDiff = angleAbs - lastAngleAbs;
-    if (angleDiff > 4.0)
-        return 0.0;
-
-    return 1.0 - (angleAbs / limitAngle);
-}
-// old speed in bend
-/*
- function speedInBend(car){
-
- function speedInBend(car){
- const maxAngle = 45.0;
- var angleAbs = Math.abs(car.angle);
- var lastAngleAbs = Math.abs(car.lastAngle);
-
- if(willSlip(car, maxAngle))
- return 0;
-
- if(angleAbs < lastAngleAbs && ( car.nextDifferentPiece.type == "B" && car.nextDifferentPiece.angle <= car.currentPiece.angle))
- return 1.0;
-
- var angleDiff = angleAbs - lastAngleAbs;
- if(angleDiff > maxAngle * 0.1)
- return 0.0;
-
- var speed = 1.0 - angleAbs / maxAngle;
- if(speed > 0.7)
- speed = 1;
- return speed;
- }
- */
-
 function willSlip(car, maxAngle){
     var angleAbs = Math.abs(car.angle);
     var lastAngleAbs = Math.abs(car.lastAngle);
@@ -276,48 +231,25 @@ function willSlip(car, maxAngle){
     return false;
 }
 
-function targetSpeedCalc(car){
+function targetSpeedCalc(car, piece){
     // New, beautiful and optimized calculation
 
     // First, initialize many constants
     const gravity = 9.78 ;
     const secondsPerTick = 1/60;
     const frictionFactor = 49;
-    const nextBendPiece = car.nextBendPiece;
-    const nextSwitchPiece = car.nextSwitchPiece;
-    const radius = car.nextBendPiece.radius;
-    const radianAngle = car.nextBendPiece.angleInRadians;
-    const angle = car.nextBendPiece.angle;
-    const lane = car.lane;
-    const lanes = car.track.lanes;
-    const switchDirection = car.driver.determineSwitchDirection()
 
-    var laneDistanceFromCenter = 0.0;
-    if(nextBendPiece.index < nextSwitchPiece.index){
-        // If next bend is before the switch, next bend calc is for the actual lane
-        laneDistanceFromCenter = nextBendPiece.laneDistanceFromCenter(lane);
-    }else{
-        // If next bend is the next switch or the next switch is before the next bend we must calc
-        // the speed for the lane that the car will be
-        laneDistanceFromCenter  = switchDirection == null ? nextBendPiece.laneDistanceFromCenter(lane)
-            : switchDirection == 'Right' ?  nextBendPiece.laneDistanceFromCenter(lanes[lane.index + 1])
-            : nextBendPiece.laneDistanceFromCenter(lanes[lane.index - 1]);
-    }
+    const radius = piece.radius;
+    const radianAngle = piece.angleInRadians;
+    const angle = piece.angle;
 
+    var laneDistanceFromCenter = calculateLaneDistanceFromCenter(car, piece);
 
-    //console.log(laneDistanceFromCenter + " <<-- " + nextBendPiece.laneDistanceFromCenter(lane))
+    //console.log(laneDistanceFromCenter + " <<-- " + piece.laneDistanceFromCenter(lane))
 
     var radiusInLane = radius + laneDistanceFromCenter;
-    var maxFriction = Math.sqrt( radiusInLane * (Math.abs(angle) / gravity ))
-    var fasterSpeed = ( Math.sqrt( maxFriction * radiusInLane ) / 6.0 )
-
-
-    var radiusInLane = radius + laneDistanceFromCenter;
-    var targetSpeed = Math.sqrt( frictionFactor * radiusInLane * gravity) ;
-    var slowerSpeed = targetSpeed / 60.0;
-
-    var targetSpeed = fasterSpeed - slowerSpeed;
-    return  fasterSpeed - targetSpeed * 0.4;
+    var maxFriction = Math.sqrt( radiusInLane * (Math.abs(angle) / gravity ));
+    return ( Math.sqrt( maxFriction * radiusInLane ) / 6 )  ;
 
 
     // Old calc
@@ -328,6 +260,17 @@ function targetSpeedCalc(car){
     //var radiusInLane = radius + laneDistanceFromCenter;
     //var targetSpeed = Math.sqrt( frictionFactor * radiusInLane * gravity) ;
     //return targetSpeed / 60;
+
+    //Another calc
+    //var radiusInLane = radius + laneDistanceFromCenter;
+    //var maxFriction = Math.sqrt( radiusInLane * (Math.abs(angle) / gravity ))
+    //var fasterSpeed = ( Math.sqrt( maxFriction * radiusInLane ) / 6.0 )
+    //var radiusInLane = radius + laneDistanceFromCenter;
+    //var targetSpeed = Math.sqrt( frictionFactor * radiusInLane * gravity) ;
+    //var slowerSpeed = targetSpeed / 60.0;
+    //var targetSpeed = fasterSpeed - slowerSpeed;
+    //return  fasterSpeed - targetSpeed * 0.4;
+
 
 }
 
