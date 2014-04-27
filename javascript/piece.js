@@ -24,7 +24,23 @@ function Piece(data, index) {
   this.switch = !!data.switch;
 }
 
-Piece.prototype.lengthInLane = function(lane) {
+Piece.prototype.lengthInLane = function(lane, laneTo) {
+
+    if(!!laneTo){
+        if(laneTo.index !== lane.index){
+            var laneToDistance = laneTo.distanceFromCenter;
+            var laneFromDistance = lane.distanceFromCenter;
+            var cathetus = Math.abs(laneToDistance - laneFromDistance);
+            // Different signals
+            if( (laneToDistance > 0 && laneFromDistance < 0)
+                || (laneToDistance < 0 && laneFromDistance > 0)){
+                cathetus = Math.abs(laneToDistance) + Math.abs(laneFromDistance);
+            }
+            var hypothenuse = Math.sqrt( Math.pow( cathetus, 2 ) + Math.pow( this.lengthInLane(laneTo), 2 ) );
+            return hypothenuse;
+        }
+    }
+
 	if (this.type == "B") {
 		var angleInRadians = (Math.PI * this.angle) / 180;
 		var distanceToCenter = this.radius + this.laneDistanceFromCenter(lane);

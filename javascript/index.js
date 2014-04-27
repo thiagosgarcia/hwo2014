@@ -18,7 +18,7 @@ client = net.connect(serverPort, serverHost, function() {
           key: botKey,
           color: "green"
         }
-        , trackName: "france"
+        , trackName: "keimola"
         , carCount: 1
     }
   });
@@ -67,7 +67,9 @@ function race(info, gameTick) {
 		+" | acc " + myCar.acceleration
 		+" | lap " + myCar.lap
 		+" | nextBend " + myCar.distanceToBend()
-        //+"\n | Piece: lenght " + myCar.currentPiece.lengthInLane(myCar.lane)
+		+" | lane " + myCar.lane.index
+		+" | switch " + myCar.currentPiece.switch
+        //+" | Piece: lenght " + myCar.currentPiece.lengthInLane(myCar.track.lanes[0], myCar.track.lanes[1])
         //+" . radius " + myCar.currentPiece.radius
         //+" . angle " + myCar.currentPiece.angle
 		//+" | nextSwitch " + leftToNextSwitch(piecePosition.pieceIndex, carLane, piecePosition)
@@ -131,7 +133,8 @@ function throttle(val) {
         var executionTime = end.getUTCMilliseconds() - start.getUTCMilliseconds();
         // If it took more than 60% of the time available, there's an alert
         if(executionTime > (50 / 3) * 0.6)
-            console.log( "Execution time alert: " + (executionTime) + " ms of " + (Math.floor((50 / (3) % 100)*100) /100) + " available for each tick!")
+            console.log( "Execution time alert: " + (executionTime) + " ms of "
+                + (Math.floor((50 / (3) % 100)*100) /100) + " available for each tick!")
     }
 }
 
@@ -158,8 +161,6 @@ var end;
 jsonStream.on('data', function(data) {
 
     start = new Date();
-
-
     var info = data['data'];
     
     switch(data.msgType) {

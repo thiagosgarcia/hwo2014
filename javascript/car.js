@@ -27,6 +27,11 @@ function Car(data, track) {
     this.currentPiece = null;
 	this.inPieceDistance = null;
 	this.lane = null;
+
+    // It is used for correct speed calculation when the car is switching lanes
+    this.laneInlastPiece = null;
+    this.laneInPieceBefore = null;
+
 	this.lap = null;
 
     this.nextBendPiece = null;
@@ -35,7 +40,7 @@ function Car(data, track) {
     this.nextDifferentPiece = null;
     this.nextSwitchPiece = null;
 
-	this.lastPiece = null;
+    this.lastPiece = null;
 	this.lastInPieceDistance = 0.0;
 	this.lastSpeed = 0.0;
 	this.acceleration = 0.0;
@@ -57,18 +62,16 @@ Car.prototype.updateCarPosition = function(positionInfoArray) {
 	var piecePosition = positionInfo.piecePosition;
 
 	this.currentPiece = this.track.pieces[piecePosition.pieceIndex];
+
 	this.lane = this.track.lanes[piecePosition.lane.endLaneIndex];
 	this.inPieceDistance = piecePosition.inPieceDistance;
 	this.lap = piecePosition.lap;
-	
-	// If the car entered in a piece that is a switch or bend, 
+
+	// If the car entered in a piece that is a switch or bend,
 	// i'll enable the checkSwitch flag to verify for the possible next switch;
 	if(!!this.lastPiece && (this.lastPiece.index != this.currentPiece.index) && (this.currentPiece.switch || this.currentPiece.type == "B")) {
 		this.driver.checkSwitch = true;
 	}
-
-	this.inPieceDistance = piecePosition.inPieceDistance;
-	this.lap = piecePosition.lap;
 
     var i = piecePosition.pieceIndex;
     var bendAheadFlag = 0;
@@ -144,22 +147,27 @@ Car.prototype.updateCarPosition = function(positionInfoArray) {
 Car.prototype.rechargeTurbo = function(turboInfo) {
     this.turboDuration = turboInfo.turboDurationTicks;
     this.turboFactor = turboInfo.turboFactor;
-
-    // If the factor is less than 1, then we can say the turbo will get the car slower, right?
-    // So, even just for now, I'll make sure we don't get into jokes and only go turbo if
-    // multiplier is equal to or greater than 1
-    if(this.turboFactor >= 1)
-        this.turboAvailable = true;
+    this.turboAvailable = true;
 }
 
 // Speed in distance per tick;
-Car.prototype.speed = function() {   
+Car.prototype.speed = function() {
     var currentSpeed = this.inPieceDistance - this.lastInPieceDistance;
 
 	// A piece transition occurred, the last piece length must be summed to the currentSpeed
 	// for the right calculation of the distance passed in this tick, because the current inPieceDistance is reset;
-    if(!!this.lastPiece && this.lastPiece.index != this.currentPiece.index)
-    	currentSpeed += this.lastPiece.lengthInLane(this.lane);
+    if(!!this.lastPiece && this.lastPiece.index !== this.currentPiece.index){
+
+        if(!!this.laneInPieceBefore && this.laneInPieceBefore.index !== this.lane.index && !!this.lastPiece.switch){
+            // It means I've changed lanes
+            currentSpeed += this.lastPiece.lengthInLane(this.laneInPieceBefore, this.lane);
+        }else{
+    	    currentSpeed += this.lastPiece.lengthInLane(this.lane);
+        }
+
+        this.laneInPieceBefore = this.laneInlastPiece;
+        this.laneInlastPiece = this.lane;
+    }
 
     this.acceleration = currentSpeed - this.lastSpeed;
     this.lastSpeed = currentSpeed;
@@ -193,14 +201,15 @@ Car.prototype.distanceToBend = function() {
     return toNextBendDistance;
 }
 
-Car.prototype.distanceToPiece = function(aPiece, lane) {
-    if(lane === undefined)
-        lane = this.lane;
+Car.prototype.distanceToPiece = function(aPiece, laneFrom, laneTo) {
+    if(! !!laneFrom)
+        laneFrom = this.lane;
 
-    var toNextPieceDistance = this.currentPiece.lengthInLane(lane) - this.inPieceDistance;
+    var toNextPieceDistance = this.currentPiece.lengthInLane(laneFrom) - this.inPieceDistance;
     var toPieceDistance = toNextPieceDistance;
 
     var nextPieceIndex = this.currentPiece.index + 1;
+    var switchAlreadyCounted = false;
     while(true) {
         if(this.track.pieces.length <= nextPieceIndex)
             nextPieceIndex = 0;
@@ -213,7 +222,8 @@ Car.prototype.distanceToPiece = function(aPiece, lane) {
         }
 
         // Increment the next Straight length and loop again;
-        toPieceDistance += nextPiece.lengthInLane(lane);
+        // laneTo is for if its a switch and it is switching lanes
+        toPieceDistance += nextPiece.lengthInLane(laneFrom, laneTo);
         nextPieceIndex++;
     }
 

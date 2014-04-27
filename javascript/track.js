@@ -31,6 +31,8 @@ function Track(data, raceInfo) {
     this.lastStraightIndex = indexes.lastStraightIndex;
 }
 
+// This is 2 in 1 function, because one value depends on each other.
+// I know this is lazy, I'm sorry
 function biggestAndLastStraightIndexes(pieces){
     var straightCount = 0;
 

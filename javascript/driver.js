@@ -3,7 +3,7 @@ var Car = require('./car.js');
 function Driver(car) {
 	this.car = car;
 	this.checkSwitch = true;
-	
+
 	this.bendFactor = 67500.0;
 }
 
@@ -97,15 +97,16 @@ Driver.prototype.speedInBend = function() {
 Driver.prototype.speedInStraight = function(){
 
     if ( !this.shouldBreak() ) {
+        //The turbo logic is now in canTurbo()
         // To use more efficiently the turbo, the driver will only activate it when the car is at the
         // first piece of the biggest straight in the track or in the lastStraight
-        if (this.car.inLastStraight()) {
-            if (this.car.turboAvailable) {
-                this.car.turboAvailable = false;
-                return 2.0; // to activate turbo in throttle function
-            }
-            return 1.0;
-        }
+        //if (this.car.inLastStraight()) {
+        //    if (this.car.turboAvailable) {
+        //        this.car.turboAvailable = false;
+        //        return 2.0; // to activate turbo in throttle function
+        //    }
+        //    return 1.0;
+        //}
         return 1.0;
     }
 
@@ -280,9 +281,6 @@ function targetSpeedCalc(car, piece){
 // to use the active turbo;
 Driver.prototype.canTurbo = function() {
 
-    // Disabled temporarily
-    return false;
-
 	var car = this.car;
 	var currentPiece = car.currentPiece;
 	var currentAcc = this.car.acceleration;
@@ -312,7 +310,8 @@ Driver.prototype.canTurbo = function() {
 	// We have to know as well at what distance from the bend the car will begin to break...
 	
 	// If the distance to the next bend is greater than the distance the car will travel in Turbo, turbo away!
-	return (distanceToBend > distanceInTurbo * 4 || car.biggestStraightIndex === car.currentPiece.index);
+	return (distanceToBend > distanceInTurbo * 4 || car.biggestStraightIndex === car.currentPiece.index
+            || car.inLastStraight());
 }
 
 // ***** Switch intelligence ***** //
@@ -377,7 +376,7 @@ Driver.prototype.determineSwitchDirection = function() {
 		}
 		// The shorter lane is more to the right of the center, switch Right.
 		else if(car.lane.distanceFromCenter < shorterLane.distanceFromCenter) {
-			return 'Right';
+            return 'Right';
 		}
 		
 		// The lane the car is driving is already the shorter! Nothing to do here..
