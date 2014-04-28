@@ -75,7 +75,7 @@ Driver.prototype.speedInBend = function() {
     if (angleDiff > 4.0)
         return 0.0;
 
-    return 1.0 - (angleAbs / limitAngle);
+    return 1.0 - (angleAbs / limitAngle) ;
 }
 
 // old speed in bend
@@ -119,7 +119,7 @@ Driver.prototype.calculateFrictionFactor = function(){
     // This will calculate the friction factor and...
     // IMPORTANT! This function can only be called in a straight and when the car is breaking
 
-    const frictionAdjustFactor = -1;
+    const frictionAdjustFactor = 0;
 
     // only in negative acceleration
     if(this.car.acceleration > 0)
@@ -142,23 +142,30 @@ Driver.prototype.calculateFrictionFactor = function(){
 
         if(this.lastFrictionFactors.length > 6){
             this.frictionFactor = averageOfNumberArray(this.lastFrictionFactors, this.frictionFactor);
-            console.log(" New friction factor: " + this.frictionFactor + " -- " + this.lastFrictionFactors.length);
+            console.log(" New friction factor: " + this.frictionFactor);
 
             // To stay this array clean, remove some elements out of the average.
             // This is MOD 10, because I don't want to to this all the time. maybe 2 or 3 items are making this get
             // out of the average
             if(this.lastFrictionFactors.length % 10 == 0){
+                // the most probably cause of a uncommon values are the lasts added ;)
+                this.lastFrictionFactors = this.lastFrictionFactors.reverse();
+
                 var i = -1;
                 while( ++ i < this.lastFrictionFactors.length ){
                     if(this.lastFrictionFactors[i] > this.frictionFactor * 1.01
                         || this.lastFrictionFactors[i] < this.frictionFactor * 0.99){
                         console.log(" Factor removed: " + this.lastFrictionFactors[i] + " Average: " + this.frictionFactor);
                         this.lastFrictionFactors.splice(i, 1);
+
+                        // If something is removed, new average is set, otherwise, it'll return the same value
+                        this.frictionFactor = averageOfNumberArray(this.lastFrictionFactors, this.frictionFactor);
                     }
                 }
 
-                // If something is removed, new average is set, otherwise, it'll return the same value
-                this.frictionFactor = averageOfNumberArray(this.lastFrictionFactors, this.frictionFactor);
+                // put it back in order
+                this.lastFrictionFactors = this.lastFrictionFactors.reverse();
+
             }
 
         }
@@ -265,7 +272,7 @@ function isTimeToBreak(currentSpeed, distanceToBend, targetSpeed, frictionFactor
     // 4 - 5 value makes the pilot break pretty securely and close to the bend.
     // Smaller values may be used when the car is in the inner lane, greater when it is in the outer lane
     // carefully, of course
-    var breakingTicksDelay = -3 ;
+    var breakingTicksDelay = 0 ;
 
     // Now with the target speed adjusted, I don't see this use, but I'll let it here for now
     // lower speeds needs less breaking tick delay
@@ -328,8 +335,11 @@ function targetSpeedCalc(car, piece){
 
     var radiusInLane = radius + laneDistanceFromCenter;
     var maxFriction = Math.sqrt( radiusInLane * (Math.abs(angle) / gravity ));
-    return ( Math.sqrt( maxFriction * radiusInLane ) / 6 ) * 0.95  ;
+    var targetSpeed = ( Math.sqrt( maxFriction * radiusInLane * gravity) / (50/3) )  ;
 
+    var factor = Math.abs(targetSpeed / (radius * angle)) * 100;
+    targetSpeed -= targetSpeed * (factor) ;
+    return targetSpeed;
 
     // Old calc
     //var maxFriction = Math.sqrt( radiusInLane * (Math.abs(radianAngle) / gravity ))
