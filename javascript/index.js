@@ -14,9 +14,9 @@ client = net.connect(serverPort, serverHost, function() {
     msgType: "joinRace",
     data: {
         botId: {
-          name: botName,
-          key: botKey,
-          color: "green"
+          name: botName
+          ,key: botKey
+          ,color: "green"
         }
         , trackName: "keimola"
         , carCount: 1
@@ -67,8 +67,8 @@ function race(info, gameTick) {
 		+" | acc " + myCar.acceleration
 		+" | lap " + myCar.lap
 		+" | nextBend " + myCar.distanceToBend()
-		+" | lane " + myCar.lane.index
-		+" | switch " + myCar.currentPiece.switch
+		//+" | lane " + myCar.lane.index
+		//+" | switch " + myCar.currentPiece.switch
         //+" | Piece: lenght " + myCar.currentPiece.lengthInLane(myCar.track.lanes[0], myCar.track.lanes[1])
         //+" . radius " + myCar.currentPiece.radius
         //+" . angle " + myCar.currentPiece.angle
@@ -196,6 +196,7 @@ jsonStream.on('data', function(data) {
 			ping();
 			break;
 		default:
+            ping();
 			break;
     }
 });

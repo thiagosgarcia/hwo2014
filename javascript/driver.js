@@ -5,6 +5,12 @@ function Driver(car) {
 	this.checkSwitch = true;
 
 	this.bendFactor = 67500.0;
+    this.frictionFactor = 49.0;
+
+    // Breaking-learn function
+    this.ticksBreaking = 0;
+    this.lastFrictionFactors = new Array();
+    this.speedAccelerationFactor = 49
 }
 
 // ***** Throttle intelligence ***** //
@@ -45,6 +51,9 @@ Driver.prototype.driveForBend = function() {
 // ***** Speed calculations ***** //
 
 Driver.prototype.speedInBend = function() {
+    // This is for breaking-learn functions
+    this.ticksBreaking = 0;
+
     var car = this.car;
     var currentPiece = car.currentPiece;
     var angleAbs = Math.abs(car.angle);
@@ -94,6 +103,71 @@ Driver.prototype.speedInBend = function() {
  }
  */
 
+function averageOfNumberArray(numberArray, defaultValue){
+    if(numberArray.length == 0)
+        return defaultValue;
+
+    var i = -1;
+    var sum = 0.0;
+    while (++ i < numberArray.length){
+        sum += numberArray[i];
+    }
+    return sum / numberArray.length;
+}
+
+Driver.prototype.calculateFrictionFactor = function(){
+    // This will calculate the friction factor and...
+    // IMPORTANT! This function can only be called in a straight and when the car is breaking
+
+    const frictionAdjustFactor = -1;
+
+    // only in negative acceleration
+    if(this.car.acceleration > 0)
+        return;
+
+    // To stay this array smaller, don't need too much data
+    if(this.lastFrictionFactors.length > 100)
+        this.lastFrictionFactors.shift();
+
+    var car = this.car;
+    var speed = this.car.lastSpeed;
+    var acceleration = this.car.acceleration;
+
+    // This is for breaking-learn functions
+    this.ticksBreaking ++;
+
+    // If less, the breaking speed is not ok for the calculation
+    if(this.ticksBreaking > 3){
+        this.lastFrictionFactors.push(Math.abs(speed / acceleration));
+
+        if(this.lastFrictionFactors.length > 6){
+            this.frictionFactor = averageOfNumberArray(this.lastFrictionFactors, this.frictionFactor);
+            console.log(" New friction factor: " + this.frictionFactor + " -- " + this.lastFrictionFactors.length);
+
+            // To stay this array clean, remove some elements out of the average.
+            // This is MOD 10, because I don't want to to this all the time. maybe 2 or 3 items are making this get
+            // out of the average
+            if(this.lastFrictionFactors.length % 10 == 0){
+                var i = -1;
+                while( ++ i < this.lastFrictionFactors.length ){
+                    if(this.lastFrictionFactors[i] > this.frictionFactor * 1.01
+                        || this.lastFrictionFactors[i] < this.frictionFactor * 0.99){
+                        console.log(" Factor removed: " + this.lastFrictionFactors[i] + " Average: " + this.frictionFactor);
+                        this.lastFrictionFactors.splice(i, 1);
+                    }
+                }
+
+                // If something is removed, new average is set, otherwise, it'll return the same value
+                this.frictionFactor = averageOfNumberArray(this.lastFrictionFactors, this.frictionFactor);
+            }
+
+        }
+        // Adjust factor
+        this.frictionFactor += frictionAdjustFactor;
+    }
+
+}
+
 Driver.prototype.speedInStraight = function(){
 
     if ( !this.shouldBreak() ) {
@@ -107,8 +181,13 @@ Driver.prototype.speedInStraight = function(){
         //    }
         //    return 1.0;
         //}
+
+        // This is for breaking-learn functions
+        this.ticksBreaking = 0;
         return 1.0;
     }
+
+    this.calculateFrictionFactor();
 
     return 0.0;
 }
@@ -156,12 +235,12 @@ Driver.prototype.shouldBreak = function(){
         return false;
 
     // Verify if it is time to break for the bend 2x ahead
-    if(isTimeToBreak(currentSpeed, distanceToBend2TimesAhead, targetSpeedForBend2TimesAhead)){
+    if(isTimeToBreak(currentSpeed, distanceToBend2TimesAhead, targetSpeedForBend2TimesAhead, this.frictionFactor)){
         console.log(" breaking for bend 2x ahead... ")
         return true;
     }
     // Verify if it is time to break for the bend ahead
-    if(isTimeToBreak(currentSpeed, distanceToBendAhead, targetSpeedForBendAhead)){
+    if(isTimeToBreak(currentSpeed, distanceToBendAhead, targetSpeedForBendAhead, this.frictionFactor)){
         console.log(" breaking for bend ahead... ")
         return true;
     }
@@ -170,16 +249,16 @@ Driver.prototype.shouldBreak = function(){
     //    return false;
 
     // Verify if it is time to break for the next bend
-    return isTimeToBreak(currentSpeed, distanceToBend, targetSpeed) || car.inLastStraight();
+    return isTimeToBreak(currentSpeed, distanceToBend, targetSpeed, this.frictionFactor) || car.inLastStraight();
 }
 
-function isTimeToBreak(currentSpeed, distanceToBend, targetSpeed){
+function isTimeToBreak(currentSpeed, distanceToBend, targetSpeed, frictionFactor){
 
-    // BreakingFactor is the relation between speed and negative acceleration when the car is
+    // FrictionFactor is the relation between speed and negative acceleration when the car is
     // fully breaking in a Straight piece.
     // It'll be calculated for each race when breaking in the firsts bends because of the
     // possibility to have a value for each track
-    var breakingFactor = 49;
+    //var frictionFactor = 49;
 
     // Now with the target speed adjusted, I don't see this use, but I'll let it here for now
     // This is a delay for breaking. Less, the pilot breaks earlier, more the pilot breaks later.
@@ -199,9 +278,9 @@ function isTimeToBreak(currentSpeed, distanceToBend, targetSpeed){
         return false;
 
     // Calculate the breaking acceleration if the car fully breaks with current speed
-    var currentBreakAcceleration = currentSpeed / breakingFactor;
+    var currentBreakAcceleration = currentSpeed / frictionFactor;
     // Calculate the breaking acceleration in target speed
-    var targetBreakAcceleration = targetSpeed / breakingFactor;
+    var targetBreakAcceleration = targetSpeed / frictionFactor;
     // Calculate the average of both breaking accelerations measured upper
     var breakAccelerationAverage = ((currentBreakAcceleration + targetBreakAcceleration) / 2);
     // Calculate the ticks left to the car get into speedTarget
@@ -223,9 +302,9 @@ function willSlip(car, maxAngle){
     var lastAngleAbs = Math.abs(car.lastAngle);
     var ticksToNextDifferentPiece = car.distanceToPiece(car.nextDifferentPiece);
     var ticksToAngleSixty = Math.abs((60.0 - angleAbs) / car.angleAcceleration);
+    var securityFactor = 1;
 
-
-    if(angleAbs > maxAngle / 4 && ticksToNextDifferentPiece > ticksToAngleSixty ){
+    if(angleAbs > maxAngle / 4 && ticksToNextDifferentPiece + securityFactor > ticksToAngleSixty ){
         console.log("ticksToNextDifferentPiece "+ ticksToNextDifferentPiece + " ticksToAngleSixty " + ticksToAngleSixty)
         return true;
     }
@@ -238,7 +317,6 @@ function targetSpeedCalc(car, piece){
     // First, initialize many constants
     const gravity = 9.78 ;
     const secondsPerTick = 1/60;
-    const frictionFactor = 49;
 
     const radius = piece.radius;
     const radianAngle = piece.angleInRadians;
@@ -250,7 +328,7 @@ function targetSpeedCalc(car, piece){
 
     var radiusInLane = radius + laneDistanceFromCenter;
     var maxFriction = Math.sqrt( radiusInLane * (Math.abs(angle) / gravity ));
-    return ( Math.sqrt( maxFriction * radiusInLane ) / 6 )  ;
+    return ( Math.sqrt( maxFriction * radiusInLane ) / 6 ) * 0.95  ;
 
 
     // Old calc
@@ -306,11 +384,11 @@ Driver.prototype.canTurbo = function() {
 	var distanceToBend = car.distanceToBend();
 	// The distance the car will travel while on turbo is determined by the following formula:
 	// Distance = Acc * TurboFactor * (Duration ^ 2)
-	var distanceInTurbo = 400.0 //(2 * currentAcc * car.turboFactor * Math.pow(car.turboDuration, 2));
+	var distanceInTurbo = 400.0 //(2 * currentAcc * car.turboFactor * Math.pow(car.turboDurationTicks, 2));
 	// We have to know as well at what distance from the bend the car will begin to break...
 	
 	// If the distance to the next bend is greater than the distance the car will travel in Turbo, turbo away!
-	return (distanceToBend > distanceInTurbo * 4 || car.biggestStraightIndex === car.currentPiece.index
+	return (distanceToBend > distanceInTurbo || car.biggestStraightIndex === car.currentPiece.index
             || car.inLastStraight());
 }
 

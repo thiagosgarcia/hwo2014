@@ -46,7 +46,7 @@ function Car(data, track) {
 	this.acceleration = 0.0;
 
 	this.turboAvailable = false;
-	this.turboDuration = 0;
+	this.turboDurationTicks = 0;
 	this.turboFactor = 1.0;
 	
 	this.driver = new Driver(this);
@@ -145,7 +145,7 @@ Car.prototype.updateCarPosition = function(positionInfoArray) {
 };
 
 Car.prototype.rechargeTurbo = function(turboInfo) {
-    this.turboDuration = turboInfo.turboDurationTicks;
+    this.turboDurationTicks = turboInfo.turboDurationTicks;
     this.turboFactor = turboInfo.turboFactor;
     this.turboAvailable = true;
 }
@@ -232,7 +232,8 @@ Car.prototype.distanceToPiece = function(aPiece, laneFrom, laneTo) {
 
 Car.prototype.inLastStraight = function(){
     // To see when the car is in last straight and never stop throttling
-    if(this.track.lastStraightIndex <= this.currentPiece.index && this.lap >= this.track.laps - 1){
+    if(this.track.lastStraightIndex <= this.currentPiece.index && this.lap >= this.track.laps - 1
+            || this.lap == this.track.laps){
         console.log("Last straight! Step on it!")
         return true;
     }
