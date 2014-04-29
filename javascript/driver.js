@@ -59,23 +59,22 @@ Driver.prototype.speedInBend = function() {
     var angleAbs = Math.abs(car.angle);
     var lastAngleAbs = Math.abs(car.lastAngle);
 
-    var limitAngle = 60.0 - (this.bendFactor / Math.abs(currentPiece.angle * currentPiece.radius));
+    //var limitAngle = 60.0 - (this.bendFactor / Math.abs(currentPiece.angle * currentPiece.radius));
 
     if(this.shouldBreak())
         return 0.0;
 
-    // To verify
-    if(willSlip(car, limitAngle))
+    if(willSlip(car, 60))
         return 0.0;
 
     if (angleAbs < lastAngleAbs)
         return 1.0;
 
     var angleDiff = angleAbs - lastAngleAbs;
-    if (angleDiff > 4.0)
+    if (angleDiff > 5.0)
         return 0.0;
 
-    return 1.0 - (angleAbs / limitAngle) ;
+    return 1.0;// - (angleAbs / limitAngle) ;
 }
 
 // old speed in bend
@@ -236,16 +235,16 @@ Driver.prototype.shouldBreak = function(){
     // Target speed to entering bends. It'll be calculated using bend radius and size
     var targetSpeed = targetSpeedCalc(car, car.nextBendPiece);
     var targetSpeedForBendAhead = targetSpeedCalc(car, car.bendPieceAhead);
-    var targetSpeedForBend2TimesAhead = targetSpeedCalc(car, car.bendPiece2TimesAhead);
+    //var targetSpeedForBend2TimesAhead = targetSpeedCalc(car, car.bendPiece2TimesAhead);
 
     if(car.inLastStraight())
         return false;
 
     // Verify if it is time to break for the bend 2x ahead
-    if(isTimeToBreak(currentSpeed, distanceToBend2TimesAhead, targetSpeedForBend2TimesAhead, this.frictionFactor)){
-        console.log(" breaking for bend 2x ahead... ")
-        return true;
-    }
+    //if(isTimeToBreak(currentSpeed, distanceToBend2TimesAhead, targetSpeedForBend2TimesAhead, this.frictionFactor)){
+    //    console.log(" breaking for bend 2x ahead... ")
+    //    return true;
+    //}
     // Verify if it is time to break for the bend ahead
     if(isTimeToBreak(currentSpeed, distanceToBendAhead, targetSpeedForBendAhead, this.frictionFactor)){
         console.log(" breaking for bend ahead... ")
@@ -339,6 +338,8 @@ function targetSpeedCalc(car, piece){
 
     var factor = Math.abs(targetSpeed / (radius * angle)) * 100;
     targetSpeed -= targetSpeed * (factor) ;
+    if(targetSpeed < 6)
+        targetSpeed *= 1.1;
     return targetSpeed;
 
     // Old calc
