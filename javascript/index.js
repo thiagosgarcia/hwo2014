@@ -2,7 +2,7 @@
 var net = require("net");
 var JSONStream = require('JSONStream');
 
-var serverHost = "prost.helloworldopen.com";
+var serverHost = "senna.helloworldopen.com";
 var serverPort = 8091;
 var botName = "WKM";
 var botKey = "rSOwFpIm+ddrdQ";
@@ -18,7 +18,7 @@ client = net.connect(serverPort, serverHost, function() {
           ,key: botKey
           ,color: "purple"
         }
-        , trackName: "germany"
+        , trackName: "keimola"
         , carCount: 1
     }
   });

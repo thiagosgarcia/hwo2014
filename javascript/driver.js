@@ -338,7 +338,9 @@ function targetSpeedCalc(car, piece){
 
     var factor = Math.abs(targetSpeed / (radius * angle)) * 100;
     targetSpeed -= targetSpeed * (factor) ;
-    if(targetSpeed < 6)
+    if(targetSpeed < 4)
+        targetSpeed *= 1.15;
+    else if(targetSpeed < 6)
         targetSpeed *= 1.1;
     return targetSpeed;
 
