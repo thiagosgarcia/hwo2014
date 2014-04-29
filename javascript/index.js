@@ -2,9 +2,9 @@
 var net = require("net");
 var JSONStream = require('JSONStream');
 
-var serverHost = "senna.helloworldopen.com";
+var serverHost = "prost.helloworldopen.com";
 var serverPort = 8091;
-var botName = "Working Minds";
+var botName = "WKM";
 var botKey = "rSOwFpIm+ddrdQ";
 
 console.log("I'm", botName, "and connect to", serverHost + ":" + serverPort);
@@ -14,11 +14,11 @@ client = net.connect(serverPort, serverHost, function() {
     msgType: "joinRace",
     data: {
         botId: {
-          name: botName,
-          key: botKey,
-          color: "green"
+          name: botName
+          ,key: botKey
+          ,color: "purple"
         }
-        , trackName: "france"
+        , trackName: "germany"
         , carCount: 1
     }
   });
@@ -62,12 +62,14 @@ function race(info, gameTick) {
 	}
 	throttle(driver.drive());
 	
-	log("tick " + gameTick + " : " + (Math.floor((gameTick / 60 % 100)*100) /100)  + " s"
+	log("tick " + gameTick + " : " + (Math.floor((gameTick / (60) % 100)*100) /100)  + " s"
 		+" | speed " + myCar.lastSpeed
 		+" | acc " + myCar.acceleration
 		+" | lap " + myCar.lap
 		+" | nextBend " + myCar.distanceToBend()
-        //+"\n | Piece: lenght " + myCar.currentPiece.lengthInLane(myCar.lane)
+		//+" | lane " + myCar.lane.index
+		//+" | switch " + myCar.currentPiece.switch
+        //+" | Piece: lenght " + myCar.currentPiece.lengthInLane(myCar.track.lanes[0], myCar.track.lanes[1])
         //+" . radius " + myCar.currentPiece.radius
         //+" . angle " + myCar.currentPiece.angle
 		//+" | nextSwitch " + leftToNextSwitch(piecePosition.pieceIndex, carLane, piecePosition)
@@ -111,6 +113,9 @@ function ping() {
 }
 
 function throttle(val) {
+    if(val == 2.0)
+        turbo();
+
     if(val > 1.0)
         val = 1.0;
     if(val < 0.0)
@@ -121,6 +126,16 @@ function throttle(val) {
         msgType: "throttle",
         data: val
     });
+
+    end = new Date();
+
+    if(start !== undefined && end !== undefined){
+        var executionTime = end.getUTCMilliseconds() - start.getUTCMilliseconds();
+        // If it took more than 60% of the time available, there's an alert
+        if(executionTime > (50 / 3) * 0.6)
+            console.log( "Execution time alert: " + (executionTime) + " ms of "
+                + (Math.floor((50 / (3) % 100)*100) /100) + " available for each tick!")
+    }
 }
 
 function switchLane(val) {
@@ -140,9 +155,12 @@ function turbo() {
 		data: "Geronimoooooo!!!"
 	});
 }
-
+var start;
+var end;
 // ***** Race events listener ***** //
 jsonStream.on('data', function(data) {
+
+    start = new Date();
     var info = data['data'];
     
     switch(data.msgType) {
@@ -178,6 +196,7 @@ jsonStream.on('data', function(data) {
 			ping();
 			break;
 		default:
+            ping();
 			break;
     }
 });
