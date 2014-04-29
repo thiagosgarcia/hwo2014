@@ -49,33 +49,6 @@ function createCar(info) {
 	driver = myCar.driver;
 }
 
-function drive(piecePosition) {
-
-    var leftToTurn = leftToNextTurn(piecePosition.pieceIndex, piecePosition.lane, piecePosition);
-    var spd = speed(piecePosition);
-    var acc = Acceleration;
-    if (!isInTurn(piecePosition.pieceIndex)) {
-        if (leftToTurn > Math.pow(spd, 2)) {
-            throttle(1);
-        } else if (spd < 7.5) {
-            throttle((1 / spd) * 3);
-        } else {
-            throttle(0);
-        }
-    } else {
-        if (spd < 7) {
-            if (acc < 0 || spd < 6.5)
-                throttle(1);
-            else
-                throttle(0);
-        } else if (acc > 0) {
-            throttle((1 / spd) * 1, 7);
-        } else {
-            throttle(1);
-        }
-
-    }
-}
 function gameInit(info) {
 	track = new Track(info.race.track, info.race.raceSession);
 	myCar.track = track;
@@ -85,18 +58,20 @@ function race(info, gameTick) {
 	myCar.updateCarPosition(info);
 	
 	// Only check for turbo and switch sends if the game is already started
-	if(!!gameTick) {	
+	if(!!gameTick && !!myCar.acceleration) {	
 		checkTurbo();
 		checkSwitch();
 	}
 	throttle(driver.drive());
 	
-	log("tick " + gameTick + " : " + (Math.floor((gameTick / 60 % 100)*100) /100)  + " s"
+	log("tick " + gameTick + " : " + (Math.floor((gameTick / (60) % 100)*100) /100)  + " s"
 		+" | speed " + myCar.lastSpeed
 		+" | acc " + myCar.acceleration
 		+" | lap " + myCar.lap
 		+" | nextBend " + myCar.distanceToBend()
-        //+"\n | Piece: lenght " + myCar.currentPiece.lengthInLane(myCar.lane)
+		//+" | lane " + myCar.lane.index
+		//+" | switch " + myCar.currentPiece.switch
+        //+" | Piece: lenght " + myCar.currentPiece.lengthInLane(myCar.track.lanes[0], myCar.track.lanes[1])
         //+" . radius " + myCar.currentPiece.radius
         //+" . angle " + myCar.currentPiece.angle
 		//+" | nextSwitch " + leftToNextSwitch(piecePosition.pieceIndex, carLane, piecePosition)
@@ -140,6 +115,9 @@ function ping() {
 }
 
 function throttle(val) {
+    if(val == 2.0)
+        turbo();
+
     if(val > 1.0)
         val = 1.0;
     if(val < 0.0)
@@ -150,6 +128,16 @@ function throttle(val) {
         msgType: "throttle",
         data: val
     });
+
+    end = new Date();
+
+    if(start !== undefined && end !== undefined){
+        var executionTime = end.getUTCMilliseconds() - start.getUTCMilliseconds();
+        // If it took more than 60% of the time available, there's an alert
+        if(executionTime > (50 / 3) * 0.6)
+            console.log( "Execution time alert: " + (executionTime) + " ms of "
+                + (Math.floor((50 / (3) % 100)*100) /100) + " available for each tick!")
+    }
 }
 
 function switchLane(val) {
@@ -169,9 +157,12 @@ function turbo() {
 		data: "Geronimoooooo!!!"
 	});
 }
-
+var start;
+var end;
 // ***** Race events listener ***** //
 jsonStream.on('data', function(data) {
+
+    start = new Date();
     var info = data['data'];
     
     switch(data.msgType) {
@@ -207,6 +198,7 @@ jsonStream.on('data', function(data) {
 			ping();
 			break;
 		default:
+            ping();
 			break;
     }
 });
