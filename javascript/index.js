@@ -18,10 +18,15 @@ console.log("I'm", botName, "and connect to", serverHost + ":" + serverPort);
 
 client = net.connect(serverPort, serverHost, function() {
   return send({
-    msgType: "join",
+    msgType: "joinRace",
     data: {
-		name: botName,
-		key: botKey
+        botId:{
+            name: botName,
+            key: botKey,
+            color: "green"
+        },
+        trackName : "keimola",
+        carCount : 1
     }
   });
 });
@@ -67,7 +72,8 @@ function race(info, gameTick) {
 	log("tick " + gameTick + " : " + (Math.floor((gameTick / (60) % 100)*100) /100)  + " s"
 		+" | speed " + myCar.lastSpeed
 		+" | acc " + myCar.acceleration
-		+" | lap " + myCar.lap
+        +" | piece " + myCar.currentPiece.index + " (" + myCar.currentPiece.type + ")"
+        +" | lap " + myCar.lap
 		+" | nextBend " + myCar.distanceToBend()
 		//+" | lane " + myCar.lane.index
 		//+" | switch " + myCar.currentPiece.switch
