@@ -17,18 +17,14 @@ var botKey = process.argv[5];
 console.log("I'm", botName, "and connect to", serverHost + ":" + serverPort);
 
 client = net.connect(serverPort, serverHost, function() {
-  return send({
-    msgType: "joinRace",
+    return send({
+    msgType: "join",
     data: {
-        botId:{
-            name: botName,
-            key: botKey,
-            color: "green"
-        },
-        trackName : "france",
-        carCount : 1
+        name: botName,
+        key: botKey
     }
-  });
+});
+
 });
 
 function send(json) {
