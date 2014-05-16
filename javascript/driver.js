@@ -117,7 +117,7 @@ function averageOfNumberArray(numberArray, defaultValue){
 Driver.prototype.calculateFrictionFactor = function(){
     // This will calculate the friction factor and...
     // IMPORTANT! This function can only be called in a straight and when the car is breaking
-return;
+
     const frictionAdjustFactor = 0;
 
     // only in negative acceleration
