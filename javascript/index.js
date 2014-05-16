@@ -17,13 +17,14 @@ var botKey = process.argv[5];
 console.log("I'm", botName, "and connect to", serverHost + ":" + serverPort);
 
 client = net.connect(serverPort, serverHost, function() {
-  return send({
+    return send({
     msgType: "join",
     data: {
-		name: botName,
-		key: botKey
+        name: botName,
+        key: botKey
     }
-  });
+});
+
 });
 
 function send(json) {
@@ -67,7 +68,8 @@ function race(info, gameTick) {
 	log("tick " + gameTick + " : " + (Math.floor((gameTick / (60) % 100)*100) /100)  + " s"
 		+" | speed " + myCar.lastSpeed
 		+" | acc " + myCar.acceleration
-		+" | lap " + myCar.lap
+        +" | piece " + myCar.currentPiece.index + " (" + myCar.currentPiece.type + ")"
+        +" | lap " + myCar.lap
 		+" | nextBend " + myCar.distanceToBend()
 		//+" | lane " + myCar.lane.index
 		//+" | switch " + myCar.currentPiece.switch
