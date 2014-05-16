@@ -117,7 +117,7 @@ function averageOfNumberArray(numberArray, defaultValue){
 Driver.prototype.calculateFrictionFactor = function(){
     // This will calculate the friction factor and...
     // IMPORTANT! This function can only be called in a straight and when the car is breaking
-
+return;
     const frictionAdjustFactor = 0;
 
     // only in negative acceleration
@@ -129,7 +129,7 @@ Driver.prototype.calculateFrictionFactor = function(){
         return;
 
     // To stay this array smaller, don't need too much data
-    if(this.lastFrictionFactors.length > 100)
+    if(this.lastFrictionFactors.length > 20)
         this.lastFrictionFactors.shift();
 
     var car = this.car;
@@ -150,16 +150,18 @@ Driver.prototype.calculateFrictionFactor = function(){
             // To stay this array clean, remove some elements out of the average.
             // This is MOD 10, because I don't want to to this all the time. maybe 2 or 3 items are making this get
             // out of the average
-            if(this.lastFrictionFactors.length % 10 == 0){
+            if(this.lastFrictionFactors.length % 5 == 0){
                 // the most probably cause of a uncommon values are the lasts added ;)
                 this.lastFrictionFactors = this.lastFrictionFactors.reverse();
 
                 var i = -1;
                 while( ++ i < this.lastFrictionFactors.length ){
-                    if(this.lastFrictionFactors[i] > this.frictionFactor * 1.01
-                        || this.lastFrictionFactors[i] < this.frictionFactor * 0.99){
+                    // Ajustar a variância pra 5%
+                    if(this.lastFrictionFactors[i] > this.frictionFactor * 1.02
+                        || this.lastFrictionFactors[i] < this.frictionFactor * 0.98){
                         console.log(" Factor removed: " + this.lastFrictionFactors[i] + " Average: " + this.frictionFactor);
                         this.lastFrictionFactors.splice(i, 1);
+                        // IMPLEMENTAR A NOVA LOGICA DE ELIMINAÇÃO DE DISCREPANCIA
 
                         // If something is removed, new average is set, otherwise, it'll return the same value
                         this.frictionFactor = averageOfNumberArray(this.lastFrictionFactors, this.frictionFactor);
@@ -319,6 +321,10 @@ function willSlip(car, maxAngle){
 
     if(checkSlip(angleAbs, maxAngle, ticksToNextDifferentPiece, securityFactor, securityFactor, angleIsIncreasing, ticksToAngleSixty))
         return true;
+
+    //TROCAR ESSE WORKAROUND POR UMA VALIDAÇÃO AJUSTADA PARA A PROXIMA CURVA (DEPOIS EU EXPLICO)
+    if( car.nextBendPiece.index <= car.currentPiece + 2)
+        return false;
 
     // Prevent ricochet (rebound)
     var angleIsIncreasing = ( car.nextBendPiece.angle > 0 && car.angleAcceleration > 0 )
