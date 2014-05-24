@@ -59,7 +59,7 @@ Race.prototype.rechargeTurbo = function(data) {
 }
 
 function decideRaceAction(gameTick) {
-    action = {};
+    var action = {};
 
     // Only check for turbo and switch sends if the game have already started
     if(isRunning(gameTick)) {

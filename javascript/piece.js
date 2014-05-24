@@ -13,15 +13,17 @@ function getAngleInRadian(angle){
 }
 
 function Piece(data, index) {
-  this.type = getPieceType(data);
-  this.index = index;
+    this.type = getPieceType(data);
+    this.index = index;
+    this.nextPiece = null;
+    this.bendIndex = null;
 
-  this.length = data.length;
-  this.radius = data.radius;
-  this.angle = data.angle;
-  this.angleInRadians = getAngleInRadian(this.angle);
+    this.length = data.length;
+    this.radius = data.radius;
+    this.angle = data.angle;
+    this.angleInRadians = getAngleInRadian(this.angle);
 
-  this.switch = !!data.switch;
+    this.switch = !!data.switch;
 }
 
 Piece.prototype.lengthInLane = function(lane, laneTo) {

@@ -2,6 +2,8 @@ var Piece = require('./piece.js');
 var Track = require('./track.js');
 var Driver = require('./driver.js');
 
+var BENDS_AHEAD_TO_VERIFY = 3;
+
 function getCarPositionInfo(car, positionInfoArray) {
 	var positionInfo = {}
 	
@@ -23,7 +25,7 @@ function Car(data, track) {
 
     this.angle = null;
     this.lastAngle = null;
-    this.angleAcceleration = 0.0;
+    this.angleSpeed = 0.0;
     this.currentPiece = null;
 	this.inPieceDistance = null;
 	this.lane = null;
@@ -34,9 +36,10 @@ function Car(data, track) {
 
 	this.lap = null;
 
-    this.nextBendPiece = null;
-    this.bendPieceAhead = null;
-    this.bendPiece2TimesAhead = null;
+    // TODO: Continuar o refactor daqui. Existiam 3 variaveis que continham as curvas a seguir. Agora
+    //       Temos um array com essas curvas. Do jeito que está vai quebrar.
+    this.bendsAhead = [];
+
     this.nextDifferentPiece = null;
     this.nextSwitchPiece = null;
 
@@ -50,68 +53,28 @@ function Car(data, track) {
 	this.turboFactor = 1.0;
 	
 	this.driver = new Driver(this);
+
+    declarePrivateMethods.call(this);
 }
 
 Car.prototype.updateCarPosition = function(positionInfoArray) {
 	var positionInfo = getCarPositionInfo(this, positionInfoArray);
+    var piecePosition = positionInfo.piecePosition;
 
     this.lastAngle = this.angle;
 	this.angle = positionInfo.angle;
-    this.angleAcceleration = this.angle - this.lastAngle;
 
-	var piecePosition = positionInfo.piecePosition;
+    this.angleSpeed = this.angle - this.lastAngle;
 
 	this.currentPiece = this.track.pieces[piecePosition.pieceIndex];
-
 	this.lane = this.track.lanes[piecePosition.lane.endLaneIndex];
 	this.inPieceDistance = piecePosition.inPieceDistance;
 	this.lap = piecePosition.lap;
 
-	// If the car entered in a piece that is a switch or bend,
-	// i'll enable the checkSwitch flag to verify for the possible next switch;
-	if(!!this.lastPiece && (this.lastPiece.index != this.currentPiece.index) && (this.currentPiece.switch || this.currentPiece.type == "B")) {
-		this.driver.checkSwitch = true;
-	}
+	this.updateCheckSwitchFlag();
+    this.getBendsAhead();
 
-    var i = piecePosition.pieceIndex;
-    var bendAheadFlag = 0;
-    // If it is true, it means that the loop has passed in a straight and the next bend, is another bend
-    var inStraight = false;
-    while(true){
-        if(++ i >= this.track.pieces.length)
-            i = 0;
-        var pieceToVerify = this.track.pieces[i];
-        if(pieceToVerify.type === "S")
-            inStraight = true;
-        else {
-            if(bendAheadFlag == 0){
-                this.nextBendPiece = pieceToVerify;
-                bendAheadFlag++;
-            }else if(bendAheadFlag == 1 &&
-                    ((pieceToVerify.angle !== this.nextBendPiece.angle || pieceToVerify.radius !== this.nextBendPiece.radius)
-                    || inStraight)){
-                // The easiest way to see the bend after the next
-                this.bendPieceAhead = pieceToVerify;
-                bendAheadFlag++;
-            }else if(bendAheadFlag == 2 &&
-                    ((pieceToVerify.angle !== this.bendPieceAhead.angle || pieceToVerify.radius !== this.bendPieceAhead.radius)
-                    || inStraight)){
-                // The easiest way to see the next 2 bends after
-                this.bendPiece2TimesAhead = pieceToVerify;
-                break;
-            }
-            inStraight = false;
-        }
-        // to prevent infinite loop, if it gets to the beginning again, it stops
-        if(i == piecePosition.pieceIndex)
-            break;
-    }
-    // Prevent null objects on circular, or almost circular circuits
-    if(this.bendPieceAhead == null)
-        this.bendPieceAhead = this.nextBendPiece;
-    if(this.bendPiece2TimesAhead == null)
-        this.bendPiece2TimesAhead = this.bendPieceAhead;
-
+    //TODO continuar daqui o Refactor 1
     // Different loops for different types to prevent confusing (getting nothing if the loop ends earlier
     // or getting wrong data if it does not stop for one variable when should have been stopped for another)
     i = piecePosition.pieceIndex;
@@ -238,6 +201,38 @@ Car.prototype.inLastStraight = function(){
         return true;
     }
     return false;
+}
+
+function declarePrivateMethods() {
+
+    // If the car entered in a piece that is a switch or bend,
+    // i'll enable the checkSwitch flag to verify for the possible next switch;
+    this.updateCheckSwitchFlag = function() {
+        if (!!this.lastPiece &&
+            (this.lastPiece.index != this.currentPiece.index) &&
+            (this.currentPiece.switch)) {
+
+            this.driver.checkSwitch = true;
+        }
+    };
+
+    this.getBendsAhead = function() {
+        var bendsAheadCounter = BENDS_AHEAD_TO_VERIFY;
+        var currentBendIndex = this.currentPiece.bendIndex;
+
+        while(bendsAheadCounter > 0) {
+            var pieceToVerify = this.currentPiece.nextPiece;
+
+            // Skip straight pieces
+            if(pieceToVerify.type === "S" || pieceToVerify.bendIndex == currentBendIndex) {
+                continue;
+            }
+
+            this.bendsAhead.push(pieceToVerify);
+            bendsAheadCounter--;
+            currentBendIndex = pieceToVerify.bendIndex;
+        }
+    }
 }
 
 module.exports = Car;

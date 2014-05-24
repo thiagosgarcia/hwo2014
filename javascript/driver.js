@@ -318,11 +318,11 @@ function willSlip(car, maxAngle){
     var angleAbs = Math.abs(car.angle);
     var lastAngleAbs = Math.abs(car.lastAngle);
     var ticksToNextDifferentPiece = car.distanceToPiece(car.nextDifferentPiece) ;
-    var ticksToAngleSixty = Math.abs((maxAngle - angleAbs) / car.angleAcceleration);
+    var ticksToAngleSixty = Math.abs((maxAngle - angleAbs) / car.angleSpeed);
 
     var securityFactor = 1;
 
-    var angleIsIncreasing = ( car.angleAcceleration > 0 && car.angle > 0 ) || ( car.angleAcceleration < 0 && car.angle < 0 );
+    var angleIsIncreasing = ( car.angleSpeed > 0 && car.angle > 0 ) || ( car.angleSpeed < 0 && car.angle < 0 );
 
     if(checkSlip(angleAbs, maxAngle, ticksToNextDifferentPiece, securityFactor, securityFactor, angleIsIncreasing, ticksToAngleSixty))
         return true;
@@ -332,11 +332,11 @@ function willSlip(car, maxAngle){
         return false;
 
     // Prevent ricochet (rebound)
-    var angleIsIncreasing = ( car.nextBendPiece.angle > 0 && car.angleAcceleration > 0 )
-        || ( car.nextBendPiece.angle < 0 && car.angleAcceleration < 0 );
+    var angleIsIncreasing = ( car.nextBendPiece.angle > 0 && car.angleSpeed > 0 )
+        || ( car.nextBendPiece.angle < 0 && car.angleSpeed < 0 );
 
     ticksToNextDifferentPiece = car.distanceToPiece(car.nextDifferentPiece) ;
-    ticksToAngleSixty = Math.abs((maxAngle - angleAbs) / car.angleAcceleration);
+    ticksToAngleSixty = Math.abs((maxAngle - angleAbs) / car.angleSpeed);
 
     return checkSlip(angleAbs, maxAngle, ticksToNextDifferentPiece, securityFactor, securityFactor, angleIsIncreasing, ticksToAngleSixty);
 }
