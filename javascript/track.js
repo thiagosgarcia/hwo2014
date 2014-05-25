@@ -13,7 +13,7 @@ function Track(data, raceInfo) {
 
     declarePrivateMethods.call(this);
 
-	this.buildTrackPieces(data.pieces);
+    this.buildTrackPieces(data.pieces);
 
     var indexes = biggestAndLastStraightIndexes(this.pieces);
     this.biggestStraightIndex = indexes.biggestStraightIndex;
@@ -74,6 +74,8 @@ function biggestAndLastStraightIndexes(pieces){
 function declarePrivateMethods() {
     this.buildTrackPieces = function(piecesInfo) {
         this.buildTrackPiece(piecesInfo, 0);
+        this.pieces.reverse();
+        this.pieces[this.pieces.length - 1].nextPiece = this.pieces[0];
 
         this.calculateBendIndexes();
     };
@@ -82,13 +84,12 @@ function declarePrivateMethods() {
         var piece = new Piece(piecesInfo[index], index);
         var nextIndex = index + 1;
 
-        if(nextIndex >= pieces.length) {
-            piece.nextPiece = this.pieces[0];
-        } else {
+        if(nextIndex < piecesInfo.length)
             piece.nextPiece = this.buildTrackPiece(piecesInfo, nextIndex);
-        }
 
         this.pieces.push(piece);
+
+        return piece;
     };
 
     this.calculateBendIndexes = function() {

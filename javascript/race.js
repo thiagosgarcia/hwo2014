@@ -56,7 +56,7 @@ Race.prototype.rechargeTurbo = function(data) {
         " | turboDurationTicks " + ourCar.turboDurationTicks +
         " | turboFactor " + ourCar.turboFactor
     );
-}
+};
 
 function decideRaceAction(gameTick) {
     var action = {};
