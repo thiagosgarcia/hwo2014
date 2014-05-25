@@ -20,6 +20,20 @@ function Track(data, raceInfo) {
     this.lastStraightIndex = indexes.lastStraightIndex;
 }
 
+Track.prototype.distanceFromPieceToPiece = function(pieceFrom, pieceTo, laneFrom, laneTo) {
+    var toPieceDistance = 0;
+    var pieceToVerify = pieceFrom;
+
+    while(pieceToVerify.index != pieceTo.index) {
+        if(pieceToVerify.index != pieceTo.index)
+            toPieceDistance += pieceToVerify.lengthInLane(laneFrom, laneTo);
+
+        pieceToVerify = pieceToVerify.nextPiece;
+    }
+
+    return toPieceDistance;
+};
+
 // This is 2 in 1 function, because one value depends on each other.
 // I know this is lazy, I'm sorry
 function biggestAndLastStraightIndexes(pieces){

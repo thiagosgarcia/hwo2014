@@ -9,17 +9,19 @@ function Driver(car) {
 
     // Breaking-learn function
     this.ticksBreaking = 0;
-    this.lastFrictionFactors = new Array();
-    this.speedAccelerationFactor = 49
+    this.lastFrictionFactors = [];
+    this.speedAccelerationFactor = 49;
+
+    declarePrivateMethods.call(this);
 }
 
 // ***** Throttle intelligence ***** //
 
 Driver.prototype.drive = function() {
-	var currentPiece = this.car.currentPiece;
+    var currentPiece = this.car.currentPiece;
     
     if (currentPiece.type == "S") {
-    	return this.driveForStraight();
+        return this.driveForStraight();
     } else if (currentPiece.type == "B") {
         return this.driveForBend();
     }
@@ -28,7 +30,7 @@ Driver.prototype.drive = function() {
 };
 
 Driver.prototype.driveForStraight = function() {
-	var car = this.car;
+    var car = this.car;
     var nextBendPiece = car.bendsAhead[0];
 
     // This calc in here, is only for the log
@@ -49,7 +51,7 @@ Driver.prototype.driveForBend = function() {
     console.log("targetSpeed: " + targetSpeed + " carAngle: " + car.angle);
 
     return this.speedInBend();
-}
+};
 
 // ***** Speed calculations ***** //
 
@@ -239,7 +241,7 @@ function calculateLaneDistanceFromCenter(car, piece){
 
 Driver.prototype.shouldBreak = function(){
     var car = this.car;
-    var currentSpeed = car.speed();
+    var currentSpeed = car.currentSpeed;
 
     var distanceToBend = car.distanceToBend();
     var distanceToBendAhead = car.distanceToPiece(car.bendsAhead[1]);
@@ -267,7 +269,7 @@ Driver.prototype.shouldBreak = function(){
 
     // Verify if it is time to break for the next bend
     return isTimeToBreak(currentSpeed, distanceToBend, targetSpeed, this.frictionFactor);
-}
+};
 
 function isTimeToBreak(currentSpeed, distanceToBend, targetSpeed, frictionFactor){
 
@@ -460,107 +462,150 @@ function targetSpeedCalc(car, piece, frictionFactor, log){
 // to use the active turbo;
 Driver.prototype.canTurbo = function() {
 
-	var car = this.car;
-	var currentPiece = car.currentPiece;
-	var currentAcc = this.car.acceleration;
-	
-	// If the car is breaking (acc <= 0.0), the turbo will not be optmized
-	if(currentAcc <= 0.0)
-		return false;
-	
-	// If the currentPiece the car is on is a Bend, we have to check if the car is on its exit;
-	if(currentPiece.type == "B") {
-		// Check if the car is on the last half of the Bend;
+    var car = this.car;
+    var currentPiece = car.currentPiece;
+    var currentAcc = this.car.acceleration;
+
+    // If the car is breaking (acc <= 0.0), the turbo will not be optmized
+    if(currentAcc <= 0.0)
+        return false;
+
+    // If the currentPiece the car is on is a Bend, we have to check if the car is on its exit;
+    if(currentPiece.type == "B") {
+        // Check if the car is on the last half of the Bend;
         // -> It was not working harder bends, let's do this in the last quarter for now
-		var bendLength = currentPiece.lengthInLane(car.lane);
-		if(car.inPieceDistance < (bendLength * 0.75))
-			return false;
-		
-		// Check if the car angle is low enough to be safe to use the turbo
+        var bendLength = currentPiece.lengthInLane(car.lane);
+        if(car.inPieceDistance < (bendLength * 0.75))
+            return false;
+
+        // Check if the car angle is low enough to be safe to use the turbo
         // -> The angle for turbo may must be lower, but the condition ahead should be enough. This is an alert point
-		if(car.angle > 45.0 || car.angle < -45.0)
-			return false;
-	}
-	
-	var distanceToBend = car.distanceToBend();
-	// The distance the car will travel while on turbo is determined by the following formula:
-	// Distance = Acc * TurboFactor * (Duration ^ 2)
-	var distanceInTurbo = 400.0; //(2 * currentAcc * car.turboFactor * Math.pow(car.turboDurationTicks, 2));
-	// We have to know as well at what distance from the bend the car will begin to break...
-	
-	// If the distance to the next bend is greater than the distance the car will travel in Turbo, turbo away!
-	return (distanceToBend > distanceInTurbo || car.biggestStraightIndex === car.currentPiece.index
+        if(car.angle > 45.0 || car.angle < -45.0)
+            return false;
+    }
+
+    var distanceToBend = car.distanceToBend();
+    // The distance the car will travel while on turbo is determined by the following formula:
+    // Distance = Acc * TurboFactor * (Duration ^ 2)
+    var distanceInTurbo = 400.0; //(2 * currentAcc * car.turboFactor * Math.pow(car.turboDurationTicks, 2));
+    // We have to know as well at what distance from the bend the car will begin to break...
+
+    // If the distance to the next bend is greater than the distance the car will travel in Turbo, turbo away!
+    return (distanceToBend > distanceInTurbo || car.biggestStraightIndex === car.currentPiece.index
             || car.inLastStraight());
-}
+};
 
 // ***** Switch intelligence ***** //
 
-// This algorithm will sum the length of all the lanes in the bends between two switches,
-// and send the switch message to the direction of the lane with the shorter length.
-// The less ground to cross, the lesser the time to cross it;
 Driver.prototype.determineSwitchDirection = function() {
-	var car = this.car; 
-	var nextBends = new Array();
-	var nextSwitch = null;
-	
-	var nextPieceIndex = car.currentPiece.index + 1;
-	while(true) {
-		if(car.track.pieces.length <= nextPieceIndex)
-			nextPieceIndex = 0;
-		
-		var nextPiece = car.track.pieces[nextPieceIndex];
-	
-		if(nextPiece.hasSwitch) {
-			// Found the second switch, after one or more bend pieces were found in between them. Stop the loop;
-			if(!!nextSwitch && nextBends.length > 0) break;
-			
-			// Found the first switch, assign it to nextSwitch;
-			nextSwitch = nextPiece;
-		} 
-		
-		if (nextPiece.type == "B") {
-			// Found a bend before a switch, break;
-			if(nextSwitch == null) break;
-		
-			nextBends.push(nextPiece);
-		}
-		
-		nextPieceIndex++;
-	}
-	
-	// Only calculate the direction if a switch were found before the next bend.
-	if(!!nextSwitch && nextBends.length > 0) {
-		var lanes = car.track.lanes;
-		var shorterLane = null;
-		
-		// Determine the shorter lane in the bends after the nextSwitch
-		for(var i = 0; i < lanes.length; i++) {
-			var lane = lanes[i];
-			var laneLength = 0;
-			
-			for(var j = 0; j < nextBends.length; j++) {
-				var bend = nextBends[j];
-				laneLength += bend.lengthInLane(lane);
-			}
-			
-			if(shorterLane == null || laneLength < shorterLane.length) {
-				shorterLane = lane;
-				shorterLane.length = laneLength;
-			}
-		}
-		
-		// The shorter lane is more to the left of the center, switch Left.
-		if(car.lane.distanceFromCenter > shorterLane.distanceFromCenter) {
+    var car = this.car;
+    var nextSwitchPiece = car.nextSwitchPiece;
+    if(nextSwitchPiece == null) return;
+
+    var lanes = car.track.lanes;
+    var switchesAheadToCheck = lanes.length - 1;
+    var switchesAhead = this.getSwitchesAhead(nextSwitchPiece, switchesAheadToCheck);
+    var lanesToCheck = this.getLaneDistances(car.track, car.lane, switchesAhead);
+    var bestLaneToSwitch = this.getBestLaneToSwitch(lanesToCheck);
+    car.lastLane = car.lane;
+
+    var switchDirection = this.getSwitchDirection(car.lane, bestLaneToSwitch);
+    return switchDirection;
+};
+
+function declarePrivateMethods() {
+
+    // ***** Switch intelligence (private methods) ***** //
+
+    this.getSwitchesAhead = function(nextSwitchPiece, switchesAheadToCheck) {
+        var switchesAhead = [nextSwitchPiece];
+        var nextPiece = nextSwitchPiece;
+
+        while(switchesAheadToCheck > 0) {
+            nextPiece = nextPiece.nextPiece;
+
+            if(nextPiece.hasSwitch) {
+                switchesAhead.push(nextPiece);
+                switchesAheadToCheck--;
+            }
+        }
+
+        switchesAhead.reverse();
+        return switchesAhead;
+    };
+
+    this.getLaneDistances = function(track, lane, switchesAhead) {
+        var lanesToCheck = [lane];
+        var laneToTheLeft = track.lanes[lane.index - 1];
+        var laneToTheRight = track.lanes[lane.index + 1];
+
+        if(!!laneToTheLeft)
+            lanesToCheck.push(laneToTheLeft);
+
+        if(!!laneToTheRight)
+            lanesToCheck.push(laneToTheRight);
+
+        var switchFrom = switchesAhead.pop();
+        if(switchesAhead.length <= 0) return [];
+
+        var switchTo = switchesAhead[switchesAhead.length - 1];
+        for(var i = 0; i < lanesToCheck.length; i++) {
+            var laneToCheck = lanesToCheck[i];
+
+            laneToCheck.distanceToNextSwitch = track.distanceFromPieceToPiece(switchFrom, switchTo, laneToCheck);
+            laneToCheck.nextLanes = this.getLaneDistances(track, laneToCheck, switchesAhead);
+        }
+
+        return lanesToCheck;
+    };
+
+    this.getBestLaneToSwitch = function(lanesToCheck) {
+        var bestLane = null;
+
+        for(var i = 0; i < lanesToCheck.length; i++) {
+            var laneToCheck = lanesToCheck[i];
+
+            laneToCheck.bestDistance = laneToCheck.distanceToNextSwitch;
+            laneToCheck.bestDistance += this.getBestDistanceToSwitch(laneToCheck.nextLanes);
+
+            if(bestLane == null || bestLane.bestDistance > laneToCheck.bestDistance)
+                bestLane = laneToCheck;
+        }
+
+        return bestLane;
+    };
+
+    this.getBestDistanceToSwitch = function(lanesToCheck) {
+        var laneDistances = [];
+
+        for(var i = 0; i < lanesToCheck; i++) {
+            var laneToCheck = lanesToCheck[i];
+            var laneDistance = laneToCheck.distanceToNextSwitch;
+
+            laneDistance += this.getBestDistanceToSwitch(laneToCheck.nextLanes);
+            laneDistances.push(laneDistance);
+        }
+
+        if(laneDistances.length <= 0)
+            return 0;
+
+        return Math.min.apply(null, laneDistances);
+    };
+
+    this.getSwitchDirection = function(currentLane, bestLane) {
+        // The best lane is more to the left of the center, switch Left.
+        if(currentLane.distanceFromCenter > bestLane.distanceFromCenter) {
             return 'Left';
-		}
-		// The shorter lane is more to the right of the center, switch Right.
-		else if(car.lane.distanceFromCenter < shorterLane.distanceFromCenter) {
+        }
+
+        // The best lane is more to the right of the center, switch Right.
+        else if(currentLane.distanceFromCenter < bestLane.distanceFromCenter) {
             return 'Right';
-		}
-		
-		// The lane the car is driving is already the shorter! Nothing to do here..
-	}
-    return null;
+        }
+
+        // The lane the car is driving is already the best! Nothing to do here..
+        return null;
+    }
 }
 
 module.exports = Driver;

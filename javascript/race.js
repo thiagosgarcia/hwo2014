@@ -47,7 +47,7 @@ Race.prototype.run = function(data, gameTick) {
     );
 
     return message;
-}
+};
 
 Race.prototype.rechargeTurbo = function(data) {
     ourCar.rechargeTurbo(data);

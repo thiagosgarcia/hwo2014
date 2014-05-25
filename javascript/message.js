@@ -122,7 +122,7 @@ function declarePrivateMethods(obj) {
         });
     };
 
-};
+}
 
 module.exports = Message;
 

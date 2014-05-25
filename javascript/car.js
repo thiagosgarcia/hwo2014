@@ -28,16 +28,14 @@ function Car(data, track) {
     this.inPieceDistance = null;
     this.lane = null;
 
-    // It is used for correct speed calculation when the car is switching lanes
-    this.laneInlastPiece = null;
-    this.laneInPieceBefore = null;
-
     this.lap = null;
     this.bendsAhead = [];
     this.nextSwitchPiece = null;
 
+    this.lastLane = null;
     this.lastPiece = null;
     this.lastInPieceDistance = 0.0;
+    this.currentSpeed = 0.0;
     this.lastSpeed = 0.0;
     this.acceleration = 0.0;
 
@@ -64,41 +62,22 @@ Car.prototype.updateCarPosition = function(positionInfoArray) {
     this.inPieceDistance = piecePosition.inPieceDistance;
     this.lap = piecePosition.lap;
 
+    this.updateCurrentSpeed();
+    this.acceleration = this.currentSpeed - this.lastSpeed;
+
     this.updateCheckSwitchFlag();
     this.getBendsAhead();
     this.getNextSwitchPiece();
+
+    this.lastPiece = this.currentPiece;
+    this.lastInPieceDistance = this.inPieceDistance;
+    this.lastSpeed = this.currentSpeed;
 };
 
 Car.prototype.rechargeTurbo = function(turboInfo) {
     this.turboDurationTicks = turboInfo.turboDurationTicks;
     this.turboFactor = turboInfo.turboFactor;
     this.turboAvailable = true;
-};
-
-Car.prototype.speed = function() {
-    var currentSpeed = this.inPieceDistance - this.lastInPieceDistance;
-
-    // A piece transition occurred, the last piece length must be summed to the currentSpeed
-    // for the right calculation of the distance passed in this tick, because the current inPieceDistance is reset;
-    if(!!this.lastPiece && this.lastPiece.index !== this.currentPiece.index){
-
-        if(!!this.laneInPieceBefore && this.laneInPieceBefore.index !== this.lane.index && !!this.lastPiece.hasSwitch){
-            // It means I've changed lanes
-            currentSpeed += this.lastPiece.lengthInLane(this.laneInPieceBefore, this.lane);
-        }else{
-            currentSpeed += this.lastPiece.lengthInLane(this.lane);
-        }
-
-        this.laneInPieceBefore = this.laneInlastPiece;
-        this.laneInlastPiece = this.lane;
-    }
-
-    this.acceleration = currentSpeed - this.lastSpeed;
-    this.lastSpeed = currentSpeed;
-    this.lastInPieceDistance = this.inPieceDistance;
-    this.lastPiece = this.currentPiece;
-
-    return currentSpeed;
 };
 
 Car.prototype.distanceToBend = function() {
@@ -114,17 +93,10 @@ Car.prototype.distanceToPiece = function(nextPiece, laneFrom, laneTo) {
     if(!laneTo)
         laneTo = this.lane;
 
-    var toPieceDistance = this.currentPiece.lengthInLane(laneFrom) - this.inPieceDistance;
-    var pieceToVerify = this.currentPiece;
+    var distance = this.track.distanceFromPieceToPiece(this.currentPiece, nextPiece, laneFrom, laneTo);
+    distance -= this.inPieceDistance;
 
-    while(pieceToVerify.index != nextPiece.index) {
-        pieceToVerify = pieceToVerify.nextPiece;
-
-        if(pieceToVerify.index != nextPiece.index)
-            toPieceDistance += pieceToVerify.lengthInLane(laneFrom, laneTo);
-    }
-
-    return toPieceDistance;
+    return distance;
 };
 
 Car.prototype.inLastStraight = function() {
@@ -140,13 +112,35 @@ Car.prototype.inLastStraight = function() {
 
 function declarePrivateMethods() {
 
-    // If the car entered in a piece that is a switch or bend,
+    this.updateCurrentSpeed = function() {
+        var currentSpeed = this.inPieceDistance - this.lastInPieceDistance;
+
+        // A piece transition occurred, the last piece length must be summed to the currentSpeed
+        // for the right calculation of the distance passed in this tick, because the current inPieceDistance is reset;
+        if(!!this.lastPiece &&
+            this.lastPiece.index !== this.currentPiece.index){
+            currentSpeed += this.lastPieceDistance();
+        }
+
+        this.currentSpeed = currentSpeed;
+    };
+
+    this.lastPieceDistance = function() {
+        if(this.lastPiece.hasSwitch &&
+           !!this.lastLane && this.lastLane.index != this.lane.index)
+            return this.lastPiece.lengthInLane(this.lastLane, this.lane);
+
+        return this.lastPiece.lengthInLane(this.lane);
+    };
+
+    // If the car entered in a piece that is a switch,
     // i'll enable the checkSwitch flag to verify for the possible next switch;
     this.updateCheckSwitchFlag = function() {
         if (!!this.lastPiece &&
             (this.lastPiece.index != this.currentPiece.index) &&
             (this.currentPiece.hasSwitch)) {
 
+            console.log("The driver will check for the next switch again!!!");
             this.driver.checkSwitch = true;
             this.nextSwitchPiece = null;
         }
