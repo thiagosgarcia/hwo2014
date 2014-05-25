@@ -82,7 +82,7 @@ Car.prototype.speed = function() {
     // for the right calculation of the distance passed in this tick, because the current inPieceDistance is reset;
     if(!!this.lastPiece && this.lastPiece.index !== this.currentPiece.index){
 
-        if(!!this.laneInPieceBefore && this.laneInPieceBefore.index !== this.lane.index && !!this.lastPiece.switch){
+        if(!!this.laneInPieceBefore && this.laneInPieceBefore.index !== this.lane.index && !!this.lastPiece.hasSwitch){
             // It means I've changed lanes
             currentSpeed += this.lastPiece.lengthInLane(this.laneInPieceBefore, this.lane);
         }else{
@@ -145,7 +145,7 @@ function declarePrivateMethods() {
     this.updateCheckSwitchFlag = function() {
         if (!!this.lastPiece &&
             (this.lastPiece.index != this.currentPiece.index) &&
-            (this.currentPiece.switch)) {
+            (this.currentPiece.hasSwitch)) {
 
             this.driver.checkSwitch = true;
             this.nextSwitchPiece = null;
@@ -179,7 +179,7 @@ function declarePrivateMethods() {
         while(this.nextSwitchPiece === null) {
             pieceToVerify = pieceToVerify.nextPiece;
 
-            if(pieceToVerify.switch) {
+            if(pieceToVerify.hasSwitch) {
                 this.nextSwitchPiece = pieceToVerify;
             }
         }

@@ -510,7 +510,7 @@ Driver.prototype.determineSwitchDirection = function() {
 		
 		var nextPiece = car.track.pieces[nextPieceIndex];
 	
-		if(nextPiece.switch) {
+		if(nextPiece.hasSwitch) {
 			// Found the second switch, after one or more bend pieces were found in between them. Stop the loop;
 			if(!!nextSwitch && nextBends.length > 0) break;
 			
