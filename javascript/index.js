@@ -15,6 +15,7 @@ var serverHost = process.argv[2];
 var serverPort = process.argv[3];
 var botName = process.argv[4];
 var botKey = process.argv[5];
+
 var trackName = process.argv[6];
 var password = process.argv[7];
 var carCount = process.argv[8];

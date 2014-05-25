@@ -1,30 +1,19 @@
 var Piece = require('./piece.js');
 
-function buildTrackPieces(pieces)
-{
-	builtPieces = new Array();
-	
-	for(var i = 0; i < pieces.length; i++) {
-		var pieceData = pieces[i];
-		var piece = new Piece(pieceData, i);
-		
-		builtPieces.push(piece);
-	}
-	
-	return builtPieces;
-}
-
 function Track(data, raceInfo) {
-	this.id = data.id;
-	this.name = data.name;
-	this.lanes = data.lanes;
+    this.id = data.id;
+    this.name = data.name;
+    this.lanes = data.lanes;
+    this.pieces = [];
 
     // If this is a qualifying laps are not defined. As we use them, just a workaround to simulate
     // as if there were as many laps as seconds
     this.laps = raceInfo.laps === undefined ? raceInfo.durationMs / 1000 : raceInfo.laps;
     this.durationMs = raceInfo.durationMs;
-	
-	this.pieces = buildTrackPieces(data.pieces);
+
+    declarePrivateMethods.call(this);
+
+    this.buildTrackPieces(data.pieces);
 
     var indexes = biggestAndLastStraightIndexes(this.pieces);
     this.biggestStraightIndex = indexes.biggestStraightIndex;
@@ -80,6 +69,73 @@ function biggestAndLastStraightIndexes(pieces){
     console.log(" Biggest straight: " + biggestStraightCount + " @ " + biggestStraightIndex );
     // Store the last straight index so at the last lap, driver will never stop throttling
     return {biggestStraightIndex: biggestStraightIndex, lastStraightIndex: lastStraightIndex};
+}
+
+function declarePrivateMethods() {
+    this.buildTrackPieces = function(piecesInfo) {
+        this.buildTrackPiece(piecesInfo, 0);
+        this.pieces.reverse();
+        this.pieces[this.pieces.length - 1].nextPiece = this.pieces[0];
+
+        this.calculateBendIndexes();
+    };
+
+    this.buildTrackPiece = function(piecesInfo, index) {
+        var piece = new Piece(piecesInfo[index], index);
+        var nextIndex = index + 1;
+
+        if(nextIndex < piecesInfo.length)
+            piece.nextPiece = this.buildTrackPiece(piecesInfo, nextIndex);
+
+        this.pieces.push(piece);
+
+        return piece;
+    };
+
+    this.calculateBendIndexes = function() {
+        var pieces = this.pieces;
+        var currentBendIndex = 0;
+
+        for(var i = 0; i < pieces.length; i++) {
+            var currentPiece = pieces[i];
+            var nextPiece = currentPiece.nextPiece;
+
+            if(currentPiece.type == "S")
+                continue;
+
+            currentPiece.bendIndex = currentBendIndex;
+            if((nextPiece.type == "S") ||
+                (currentPiece.angle !== nextPiece.angle) ||
+                (currentPiece.radius !== nextPiece.radius)) {
+
+                currentBendIndex++;
+            }
+        }
+
+        if(pieces[0].type == "B")
+            this.correctLastBendIndex();
+    };
+
+    this.correctLastBendIndex = function() {
+        var firstPiece = pieces[0];
+        var lastPiece = pieces[pieces.length - 1];
+        var lastBendIndex = lastPiece.bendIndex;
+
+        if((firstPiece.angle === lastPiece.angle) &&
+            (firstPiece.radius === lastPiece.radius)) {
+
+            for(var i = pieces.length - 1; i >= 0 ; i--) {
+                var piece = pieces[i];
+
+                if(piece.bendIndex == lastBendIndex) {
+                    piece.bendIndex = firstPiece.bendIndex;
+                    continue;
+                }
+
+                break;
+            }
+        }
+    };
 }
 
 module.exports = Track;

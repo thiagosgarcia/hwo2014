@@ -21,7 +21,7 @@ Message.prototype.joinCustomRace = function(parameters) {
             color: parameters.color
         }
     });
-}
+};
 
 Message.prototype.joinOfficialRace = function(parameters) {
     return this.send({
@@ -31,52 +31,52 @@ Message.prototype.joinOfficialRace = function(parameters) {
             key: parameters.botKey
         }
     });
-}
+};
 
 Message.prototype.join = function(data) {
     console.log('Joined race!');
     this.sendPing();
-}
+};
 
 Message.prototype.yourCar = function(data) {
     this.race.createCar(data['data']);
     this.sendPing();
-}
+};
 
 Message.prototype.gameInit = function(data) {
     this.race.init(data['data']);
     this.sendPing();
-}
+};
 
 Message.prototype.gameStart = function(data) {
     console.log('Race started!');
     this.sendPing();
-}
+};
 
 Message.prototype.carPositions = function(data) {
     action = this.race.run(data['data'], data['gameTick']);
     this[action.type](action.value);
-}
+};
 
 Message.prototype.turboAvailable = function(data) {
     this.race.rechargeTurbo(data['data']);
     this.sendPing();
-}
+};
 
 Message.prototype.lapFinished = function(data) {
     console.log('Lap finished.');
     this.sendPing();
-}
+};
 
 Message.prototype.gameEnd = function(data) {
     console.log('Race ended!');
     this.sendPing();
-}
+};
 
 Message.prototype.unknownMessage = function(data) {
     console.log("Unknown message: ", data);
     this.sendPing();
-}
+};
 
 function declarePrivateMethods(obj) {
 
@@ -122,7 +122,7 @@ function declarePrivateMethods(obj) {
         });
     };
 
-}
+};
 
 module.exports = Message;
 
