@@ -13,12 +13,12 @@ Message.prototype.joinCustomRace = function(parameters) {
         data: {
             botId: {
                 name: parameters.botName,
-                key: parameters.botKey
+                key: parameters.botKey,
+                color: parameters.color
             },
             trackName: parameters.trackName,
             password: parameters.password,
-            carCount: parameters.carCount,
-            color: parameters.color
+            carCount: parameters.carCount
         }
     });
 };

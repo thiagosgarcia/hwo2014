@@ -66,8 +66,11 @@ Driver.prototype.speedInBend = function() {
 
     //var limitAngle = 60.0 - (this.bendFactor / Math.abs(currentPiece.angle * currentPiece.radius));
 
-    if(this.shouldBreak())
+    if(this.shouldBreakInBend())
         return 0.0;
+
+    //if(this.shouldBreak())
+    //    return 0.0;
 
     if(willSlip(car, 60))
         return 0.0;
@@ -239,6 +242,88 @@ function calculateLaneDistanceFromCenter(car, piece){
 
 // ***** Breaking calculations ***** //
 
+//#added
+Driver.prototype.shouldBreakInBend = function() {
+
+    var car = this.car;
+    var piece = this.car.currentPiece;
+    var maxAngle = 60;
+
+    if(piece.type == "S")
+        return null;
+
+    var pieceLength = piece.lengthInLane(car.lane);
+    var inPiecePosition = car.inPieceDistance;
+    var angleInRadians = car.angleInRadians;
+    var inPieceRadianPosition = angleInRadians * inPiecePosition / pieceLength;
+    var inPieceLastRadianPosition = angleInRadians * car.inPieceDistance - car.acceleration / pieceLength;
+
+    var radianPerTick = inPieceRadianPosition - inPieceLastRadianPosition;
+    var radiusInLane = piece.radius + calculateLaneDistanceFromCenter(car, piece);
+    var centripetSpeed = Math.pow(radianPerTick, 2) * radiusInLane;
+
+    var frictionFactor = this.frictionFactor;
+
+    var perfectSpeed = Math.sqrt(radiusInLane / this.frictionFactor * 9.78);
+    //var ticksToTargetAngle = ticksToAngle(car, maxAngle);
+    var ticksToTargetAngle = ticksToAngle(car, maxAngle);
+    var ticksToTargetSpeed = ticksToSpeed(car.currentSpeed, perfectSpeed , frictionFactor )
+
+    console.log(" ticksToTargAngle: " + ticksToTargetAngle
+        + " | ticksToTargSpeed: " + ticksToTargetSpeed
+        + " | angleSpeed: " + car.angleSpeed
+        + " | angleAcc: " + car.angleAcceleration
+        + " | angleAccFactor: " + car.angleAccelerationFactor
+        + " | " + perfectSpeed );
+
+    if(car.currentSpeed <= perfectSpeed)
+        return false;
+    if(car.angleSpeed < 0)
+        return false;
+    if(ticksToTargetAngle > ticksToTargetSpeed)
+        return false;
+    return true;
+
+};
+//#added
+function ticksToSpeed(currentSpeed, targetSpeed, frictionFactor){
+    var speedDiff = currentSpeed - targetSpeed;
+    if(speedDiff <= 0)
+        return Infinity;
+
+    var currentBreakAcceleration = currentSpeed / frictionFactor;
+    var targetBreakAcceleration = targetSpeed / frictionFactor;
+    var breakAccelerationAverage = ((currentBreakAcceleration + targetBreakAcceleration) / 2);
+    var ticksLeftToTargetSpeed = speedDiff / breakAccelerationAverage;
+    return ticksLeftToTargetSpeed;
+}
+//#added
+function ticksToAngle(car, targetAngle){
+
+    var currentAngle = car.angle;
+    var angleSpeedDecreasing = car.angleSpeed < 0 && car.angle > 0;
+    if(angleSpeedDecreasing)
+        return Infinity;
+    return Math.abs((targetAngle - currentAngle) / car.angleSpeed )
+
+
+    /*
+    var currentAngle = car.angle;
+    var angleDiff = Math.abs(targetAngle - currentAngle);
+    var securityFactor = 1;
+
+    // current angle must be between target angle and its inverse
+    if(Math.abs(targetAngle) < Math.abs(currentAngle))
+        return Infinity;
+
+    var angleAcceleration = car.angleAcceleration;
+    var angleAccelerationFactor = car.angleAccelerationFactor;
+
+    var ticksToTargetAngle = Math.abs(car.angle - car.lastAngle) / car.angleSpeed ;
+    return ticksToTargetAngle - securityFactor;
+    */
+}
+
 Driver.prototype.shouldBreak = function(){
     var car = this.car;
     var currentSpeed = car.currentSpeed;
@@ -337,11 +422,15 @@ function willSlip(car, maxAngle){
                  angleIsIncreasing,
                  ticksToAngleSixty))
         return true;
-
+    /*
     // TODO: TROCAR ESSE WORKAROUND POR UMA VALIDAÇÃO AJUSTADA PARA A PROXIMA CURVA (DEPOIS EU EXPLICO)
-    if(nextBendPiece.index <= car.currentPiece + 2)
+    if(nextBendPiece.index > car.currentPiece + 1)
         return false;
+    */
 
+    // Preventing ricochet by another way, keeping this code here just for a few more tests
+    return false;
+    /*
     // Prevent ricochet (rebound)
     angleIsIncreasing = ( nextBendPiece.angle > 0 && car.angleSpeed > 0 ) ||
                         ( nextBendPiece.angle < 0 && car.angleSpeed < 0 );
@@ -350,6 +439,7 @@ function willSlip(car, maxAngle){
                      securityFactor,
                      angleIsIncreasing,
                      ticksToAngleSixty);
+                     */
 }
 
 function checkSlip(ticksToNextBend, securityFactor, angleIsIncreasing, ticksToAngleSixty) {

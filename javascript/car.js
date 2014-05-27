@@ -21,6 +21,11 @@ function Car(data, track) {
 
     this.track = track;
 
+    //Angle Acceleration #added
+    this.angleAcceleration = 0.0;
+    this.lastAngleAcceleration = 0.0;
+    this.angleAccelerationFactor = 0.0;
+
     this.angle = null;
     this.lastAngle = null;
     this.angleSpeed = 0.0;
@@ -55,7 +60,14 @@ Car.prototype.updateCarPosition = function(positionInfoArray) {
     this.lastAngle = this.angle;
     this.angle = positionInfo.angle;
 
+    this.lastAngleSpeed = this.angleSpeed;
     this.angleSpeed = this.angle - this.lastAngle;
+
+    //Angle Acceleration #added
+    this.lastAngleAcceleration = this.angleAcceleration;
+    this.angleAcceleration = Math.abs(this.angleSpeed - this.lastAngleSpeed);
+    if(this.angleAcceleration > 0)
+        this.angleAccelerationFactor = Math.abs(this.angleAcceleration - this.lastAngleAcceleration);
 
     this.currentPiece = this.track.pieces[piecePosition.pieceIndex];
     this.lane = this.track.lanes[piecePosition.lane.endLaneIndex];
