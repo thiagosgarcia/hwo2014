@@ -276,11 +276,12 @@ Driver.prototype.shouldBreakInBend = function() {
         + " | angleAccFactor: " + car.angleAccelerationFactor
         + " | " + perfectSpeed );
 
+    var securityMaxAngleTicksFactor = 3;
     if(car.currentSpeed <= perfectSpeed)
         return false;
     if(car.angleSpeed < 0)
         return false;
-    if(ticksToTargetAngle > ticksToTargetSpeed)
+    if(ticksToTargetAngle > 3)
         return false;
     return true;
 
@@ -295,13 +296,14 @@ function ticksToSpeed(currentSpeed, targetSpeed, frictionFactor){
     var targetBreakAcceleration = targetSpeed / frictionFactor;
     var breakAccelerationAverage = ((currentBreakAcceleration + targetBreakAcceleration) / 2);
     var ticksLeftToTargetSpeed = speedDiff / breakAccelerationAverage;
-    return ticksLeftToTargetSpeed;
+    return ticksLeftToTargetSpeed - 5;
 }
 //#added
 function ticksToAngle(car, targetAngle){
 
     var currentAngle = car.angle;
-    var angleSpeedDecreasing = car.angleSpeed < 0 && car.angle > 0;
+    var angleSpeedDecreasing = (car.angleSpeed < 0 && car.angle > 0)
+                                || (car.angleSpeed > 0 && car.angle < 0);
     if(angleSpeedDecreasing)
         return Infinity;
     return Math.abs((targetAngle - currentAngle) / car.angleSpeed )
