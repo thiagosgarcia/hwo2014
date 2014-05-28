@@ -1,3 +1,4 @@
+var Piece = require('./piece.js');
 var Driver = require('./driver.js');
 
 var BENDS_AHEAD_TO_VERIFY = 3;
@@ -105,7 +106,7 @@ Car.prototype.distanceToPiece = function(nextPiece, laneFrom, laneTo) {
     if(!laneTo)
         laneTo = this.lane;
 
-    var distance = this.track.distanceFromPieceToPiece(this.currentPiece, nextPiece, laneFrom, laneTo);
+    var distance = Piece.distanceFromPieceToPiece(this.currentPiece, nextPiece, laneFrom, laneTo);
     distance -= this.inPieceDistance;
 
     return distance;

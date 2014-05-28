@@ -1,5 +1,7 @@
-function Piece(data, index) {
+function Piece(data, index, track) {
     this.index = index;
+    this.track = track;
+
     this.nextPiece = null;
     this.bendIndex = null;
 
@@ -25,6 +27,35 @@ Piece.prototype.lengthInLane = function(laneFrom, laneTo) {
     }
 
     return this.length;
+};
+
+Piece.prototype.distanceToNextSwitch = function(laneFrom, laneTo) {
+    var distance = this["distanceToNextSwitchForLanes" + laneFrom.index + "-" + laneTo.index];
+    if(!!distance)
+        return distance;
+
+    var nextSwitchPiece = this.nextPiece;
+    while(!nextSwitchPiece.hasSwitch) {
+        nextSwitchPiece = nextSwitchPiece.nextPiece;
+    }
+
+    distance = Piece.distanceFromPieceToPiece(this, nextSwitchPiece, laneFrom, laneTo);
+    this["distanceToNextSwitchForLanes" + laneFrom.index + "-" + laneTo.index] = distance;
+    return distance;
+};
+
+Piece.distanceFromPieceToPiece = function(pieceFrom, pieceTo, laneFrom, laneTo) {
+    var toPieceDistance = 0;
+    var pieceToVerify = pieceFrom;
+
+    while(pieceToVerify.index != pieceTo.index) {
+        if(pieceToVerify.index != pieceTo.index)
+            toPieceDistance += pieceToVerify.lengthInLane(laneFrom, laneTo);
+
+        pieceToVerify = pieceToVerify.nextPiece;
+    }
+
+    return toPieceDistance;
 };
 
 function declarePrivateMethods() {

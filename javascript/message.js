@@ -38,6 +38,10 @@ Message.prototype.join = function(data) {
     this.sendPing();
 };
 
+Message.prototype.joinRace = function(data) {
+    this.join(data);
+};
+
 Message.prototype.yourCar = function(data) {
     this.race.createCar(data['data']);
     this.sendPing();

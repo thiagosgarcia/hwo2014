@@ -1,9 +1,11 @@
 var Piece = require('./piece.js');
+var Lane = require('./lane.js');
 
 function Track(data, raceInfo) {
     this.id = data.id;
     this.name = data.name;
-    this.lanes = data.lanes;
+
+    this.lanes = [];
     this.pieces = [];
 
     // If this is a qualifying laps are not defined. As we use them, just a workaround to simulate
@@ -14,25 +16,12 @@ function Track(data, raceInfo) {
     declarePrivateMethods.call(this);
 
     this.buildTrackPieces(data.pieces);
+    this.buildTrackLanes(data.lanes);
 
     var indexes = biggestAndLastStraightIndexes(this.pieces);
     this.biggestStraightIndex = indexes.biggestStraightIndex;
     this.lastStraightIndex = indexes.lastStraightIndex;
 }
-
-Track.prototype.distanceFromPieceToPiece = function(pieceFrom, pieceTo, laneFrom, laneTo) {
-    var toPieceDistance = 0;
-    var pieceToVerify = pieceFrom;
-
-    while(pieceToVerify.index != pieceTo.index) {
-        if(pieceToVerify.index != pieceTo.index)
-            toPieceDistance += pieceToVerify.lengthInLane(laneFrom, laneTo);
-
-        pieceToVerify = pieceToVerify.nextPiece;
-    }
-
-    return toPieceDistance;
-};
 
 // This is 2 in 1 function, because one value depends on each other.
 // I know this is lazy, I'm sorry
@@ -104,6 +93,15 @@ function declarePrivateMethods() {
         this.pieces.push(piece);
 
         return piece;
+    };
+
+    this.buildTrackLanes = function(lanes) {
+        for(var i = 0; i < lanes.length; i++) {
+            var laneInfo = lanes[i];
+            var lane = new Lane(laneInfo);
+
+            this.lanes.push(lane);
+        }
     };
 
     this.calculateBendIndexes = function() {

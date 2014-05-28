@@ -1,4 +1,4 @@
-var Car = require('./car.js');
+var LaneSegment = require('./laneSegment.js');
 
 function Driver(car) {
 	this.car = car;
@@ -595,8 +595,9 @@ Driver.prototype.determineSwitchDirection = function() {
     var lanes = car.track.lanes;
     var switchesAheadToCheck = lanes.length - 1;
     var switchesAhead = this.getSwitchesAhead(nextSwitchPiece, switchesAheadToCheck);
-    var lanesToCheck = this.getLaneDistances(car.track, car.lane, switchesAhead);
-    var bestLaneToSwitch = this.getBestLaneToSwitch(lanesToCheck);
+
+    var segmentsToCheck = this.getSegmentsToCheck(car.track, car.lane, switchesAhead);
+    var bestLaneToSwitch = this.getBestLaneToSwitch(segmentsToCheck);
     car.lastLane = car.lane;
 
     var switchDirection = this.getSwitchDirection(car.lane, bestLaneToSwitch);
@@ -624,39 +625,41 @@ function declarePrivateMethods() {
         return switchesAhead;
     };
 
-    this.getLaneDistances = function(track, lane, switchesAhead) {
-        var lanesToCheck = [lane];
+    this.getSegmentsToCheck = function(track, lane, switchesAhead) {
+        var segmentsToCheck = [new LaneSegment(lane)];
         var laneToTheLeft = track.lanes[lane.index - 1];
         var laneToTheRight = track.lanes[lane.index + 1];
 
         if(!!laneToTheLeft)
-            lanesToCheck.push(laneToTheLeft);
+            segmentsToCheck.push(new LaneSegment(laneToTheLeft));
 
         if(!!laneToTheRight)
-            lanesToCheck.push(laneToTheRight);
+            segmentsToCheck.push(new LaneSegment(laneToTheRight));
 
         var switchFrom = switchesAhead.pop();
         if(switchesAhead.length <= 0) return [];
 
-        var switchTo = switchesAhead[switchesAhead.length - 1];
-        for(var i = 0; i < lanesToCheck.length; i++) {
-            var laneToCheck = lanesToCheck[i];
+        for(var i = 0; i < segmentsToCheck.length; i++) {
+            var segmentToCheck = segmentsToCheck[i];
 
-            laneToCheck.distanceToNextSwitch = track.distanceFromPieceToPiece(switchFrom, switchTo, laneToCheck);
-            laneToCheck.nextLanes = this.getLaneDistances(track, laneToCheck, switchesAhead);
+            segmentToCheck.distanceToNextSwitch = switchFrom.distanceToNextSwitch(lane, segmentToCheck.lane);
+            segmentToCheck.nextSegments = this.getSegmentsToCheck(track,
+                                                                  segmentToCheck.lane,
+                                                                  switchesAhead);
         }
 
-        return lanesToCheck;
+        return segmentsToCheck;
     };
 
-    this.getBestLaneToSwitch = function(lanesToCheck) {
+    this.getBestLaneToSwitch = function(segmentsToCheck) {
         var bestLane = null;
 
-        for(var i = 0; i < lanesToCheck.length; i++) {
-            var laneToCheck = lanesToCheck[i];
+        for(var i = 0; i < segmentsToCheck.length; i++) {
+            var segmentToCheck = segmentsToCheck[i];
+            var laneToCheck = segmentToCheck.lane;
 
-            laneToCheck.bestDistance = laneToCheck.distanceToNextSwitch;
-            laneToCheck.bestDistance += this.getBestDistanceToSwitch(laneToCheck.nextLanes);
+            laneToCheck.bestDistance = segmentToCheck.distanceToNextSwitch;
+            laneToCheck.bestDistance += this.getBestDistanceToSwitch(segmentToCheck.nextSegments);
 
             if(bestLane == null || bestLane.bestDistance > laneToCheck.bestDistance)
                 bestLane = laneToCheck;
@@ -665,21 +668,21 @@ function declarePrivateMethods() {
         return bestLane;
     };
 
-    this.getBestDistanceToSwitch = function(lanesToCheck) {
-        var laneDistances = [];
+    this.getBestDistanceToSwitch = function(segmentsToCheck) {
+        var segmentDistances = [];
 
-        for(var i = 0; i < lanesToCheck; i++) {
-            var laneToCheck = lanesToCheck[i];
-            var laneDistance = laneToCheck.distanceToNextSwitch;
+        for(var i = 0; i < segmentsToCheck; i++) {
+            var segmentToCheck = segmentsToCheck[i];
+            var segmentDistance = segmentToCheck.distanceToNextSwitch;
 
-            laneDistance += this.getBestDistanceToSwitch(laneToCheck.nextLanes);
-            laneDistances.push(laneDistance);
+            segmentDistance += this.getBestDistanceToSwitch(segmentToCheck.nextSegments);
+            segmentDistances.push(segmentDistance);
         }
 
-        if(laneDistances.length <= 0)
+        if(segmentDistances.length <= 0)
             return 0;
 
-        return Math.min.apply(null, laneDistances);
+        return Math.min.apply(null, segmentDistances);
     };
 
     this.getSwitchDirection = function(currentLane, bestLane) {
