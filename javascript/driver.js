@@ -1,15 +1,16 @@
 var LaneSegment = require('./laneSegment.js');
+var Piece = require('./piece.js');
 
 function Driver(car) {
 	this.car = car;
 	this.checkSwitch = true;
 
 	this.bendFactor = 67500.0;
-    this.frictionFactor = 49.0;
+    this.breakingFactor = 49.0;
 
     // Breaking-learn function
     this.ticksBreaking = 0;
-    this.lastFrictionFactors = [];
+    this.lastBreakingFactors = [];
     this.speedAccelerationFactor = 49;
 
     declarePrivateMethods.call(this);
@@ -29,86 +30,44 @@ Driver.prototype.drive = function() {
     return 1;
 };
 
+// ***** Speed calculations ***** //
+
 Driver.prototype.driveForStraight = function() {
-    var car = this.car;
-    var nextBendPiece = car.bendsAhead[0];
+    console.log(" carAngle: " + this.car.angle);
 
-    // This calc in here, is only for the log
-    // TODO: Fazer o calculo do targetSpeed apenas uma vez. Colocar esse cara como uma variavel de instancia.
-    var targetSpeed = targetSpeedCalc(car, nextBendPiece, this.frictionFactor, true);
-    console.log("targetSpeed: " + targetSpeed + " carAngle: " + car.angle);
+    if ( !this.shouldBreak() ) {
+        this.ticksBreaking = 0;
+        return 1.0;
+    }
 
-    return this.speedInStraight();
+    this.calculateBreakingFactor();
+    return 0.0;
 };
 
 Driver.prototype.driveForBend = function() {
     var car = this.car;
-    var currentAcc = car.acceleration;
-    var nextBendPiece = car.bendsAhead[0];
+    console.log(" carAngle: " + car.angle);
 
-    // This calc in here, is only for the log
-    var targetSpeed = targetSpeedCalc(car, nextBendPiece, this.frictionFactor, true);
-    console.log("targetSpeed: " + targetSpeed + " carAngle: " + car.angle);
-
-    return this.speedInBend();
-};
-
-// ***** Speed calculations ***** //
-
-Driver.prototype.speedInBend = function() {
-    // This is for breaking-learn functions
     this.ticksBreaking = 0;
 
-    var car = this.car;
-    var currentPiece = car.currentPiece;
     var angleAbs = Math.abs(car.angle);
     var lastAngleAbs = Math.abs(car.lastAngle);
 
-    //var limitAngle = 60.0 - (this.bendFactor / Math.abs(currentPiece.angle * currentPiece.radius));
-
-    if(this.shouldBreakInBend())
+    if(this.shouldBreakInBend() || this.shouldBreak())
         return 0.0;
 
-    //if(this.shouldBreak())
-    //    return 0.0;
-
-    if(willSlip(car, 60))
+    if(willCrash(car, 60))
         return 0.0;
 
-    if (angleAbs < lastAngleAbs)
-        return 1.0;
+    if(angleAbs < lastAngleAbs)
+        return 1;
 
     var angleDiff = angleAbs - lastAngleAbs;
     if (angleDiff > 4.0)
         return 0.0;
 
-    return 1.0;// - (angleAbs / limitAngle) ;
-}
-
-// old speed in bend
-/*
-
- function speedInBend(car){
- const maxAngle = 45.0;
- var angleAbs = Math.abs(car.angle);
- var lastAngleAbs = Math.abs(car.lastAngle);
-
- if(shouldBreak(car))
- return 0.0;
-
- if(willSlip(car, maxAngle))
- return 0.0;
-
- var angleDiff = angleAbs - lastAngleAbs;
- if(angleDiff <= 0 ) //&& car.nextDifferentPiece.angle <= car.currentPiece.angle)
- return 1.0;
-
- if(angleDiff > maxAngle * 0.08)
- return 0.0;
-
- return 1.0 - angleAbs / maxAngle;
- }
- */
+    return 1.0;
+};
 
 function averageOfNumberArray(numberArray, defaultValue){
     if(numberArray.length == 0)
@@ -122,11 +81,9 @@ function averageOfNumberArray(numberArray, defaultValue){
     return sum / numberArray.length;
 }
 
-Driver.prototype.calculateFrictionFactor = function(){
+Driver.prototype.calculateBreakingFactor = function(){
     // This will calculate the friction factor and...
     // IMPORTANT! This function can only be called in a straight and when the car is breaking
-
-    const frictionAdjustFactor = 0;
 
     // only in negative acceleration
     if(this.car.acceleration > 0)
@@ -134,8 +91,8 @@ Driver.prototype.calculateFrictionFactor = function(){
 
     // This is for breaking-learn functions
     this.ticksBreaking ++;
-    console.log(" TicksBreaking " + this.lastFrictionFactors.length)
-    console.log(" Factors " + this.lastFrictionFactors);
+    console.log(" TicksBreaking " + this.lastBreakingFactors.length)
+    console.log(" Factors " + this.lastBreakingFactors);
     // If less, the breaking speed is not ok for the calculation
     if(this.ticksBreaking <= 3)
         return;
@@ -145,76 +102,52 @@ Driver.prototype.calculateFrictionFactor = function(){
         return;
 
     // To stay this array smaller, don't need too much data and take out the biggest and the lower
-    if(this.lastFrictionFactors.length > 21){
-        this.lastFrictionFactors.shift();
-        this.lastFrictionFactors.pop();
+    if(this.lastBreakingFactors.length > 21){
+        this.lastBreakingFactors.shift();
+        this.lastBreakingFactors.pop();
     }
 
     var car = this.car;
     var speed = this.car.lastSpeed;
     var acceleration = this.car.acceleration;
 
-    this.lastFrictionFactors.push(Math.abs(speed / acceleration));
+    this.lastBreakingFactors.push(Math.abs(speed / acceleration));
 
-    if(this.lastFrictionFactors.length > 3){
-        this.frictionFactor = averageOfNumberArray(this.lastFrictionFactors, this.frictionFactor);
-        console.log(" New friction factor: " + this.frictionFactor);
+    if(this.lastBreakingFactors.length > 3){
+        this.breakingFactor = averageOfNumberArray(this.lastBreakingFactors, this.breakingFactor);
+        console.log(" New friction factor: " + this.breakingFactor);
 
         // To stay this array clean, remove some elements out of the average.
         // This is MOD 10, because I don't want to to this all the time. maybe 2 or 3 items are making this get
         // out of the average
-        if(this.lastFrictionFactors.length % 5 != 0)
+        if(this.lastBreakingFactors.length % 5 != 0)
             return;
 
         // the most probably cause of a uncommon values are the lasts added ;)
-        this.lastFrictionFactors.sort(function(a,b){return a-b});
-        console.log(this.lastFrictionFactors);
+        this.lastBreakingFactors.sort(function(a,b){return a-b});
+        console.log(this.lastBreakingFactors);
 
         //Math.floor for now, but we got to know if we use the upper or lower median
-        var med = this.lastFrictionFactors[Math.floor(this.lastFrictionFactors.length / 2)]
+        var med = this.lastBreakingFactors[Math.floor(this.lastBreakingFactors.length / 2)]
 
         var i = -1;
-        while( ++ i < this.lastFrictionFactors.length ){
+        while( ++ i < this.lastBreakingFactors.length ){
 
             // Ajustar a variância pra 5%
-            if(this.lastFrictionFactors[i] > med * 1.025
-                || this.lastFrictionFactors[i] < med * 0.975){
-                console.log(" Factor removed: " + this.lastFrictionFactors[i] + " Average: " + this.frictionFactor);
-                this.lastFrictionFactors.splice(i, 1);
+            if(this.lastBreakingFactors[i] > med * 1.025
+                || this.lastBreakingFactors[i] < med * 0.975){
+                console.log(" Factor removed: " + this.lastBreakingFactors[i] + " Average: " + this.breakingFactor);
+                this.lastBreakingFactors.splice(i, 1);
                 // If something is removed, new average is set, otherwise, it'll return the same value
-                this.frictionFactor = averageOfNumberArray(this.lastFrictionFactors, this.frictionFactor);
+                this.breakingFactor = averageOfNumberArray(this.lastBreakingFactors, this.breakingFactor);
             }
         }
 
     }
     // Adjust factor
-    this.frictionFactor += frictionAdjustFactor;
+    this.breakingFactor;
 
 
-}
-
-Driver.prototype.speedInStraight = function(){
-
-    if ( !this.shouldBreak() ) {
-        //The turbo logic is now in canTurbo()
-        // To use more efficiently the turbo, the driver will only activate it when the car is at the
-        // first piece of the biggest straight in the track or in the lastStraight
-        //if (this.car.inLastStraight()) {
-        //    if (this.car.turboAvailable) {
-        //        this.car.turboAvailable = false;
-        //        return 2.0; // to activate turbo in throttle function
-        //    }
-        //    return 1.0;
-        //}
-
-        // This is for breaking-learn functions
-        this.ticksBreaking = 0;
-        return 1.0;
-    }
-
-    this.calculateFrictionFactor();
-
-    return 0.0;
 }
 
 // ***** Direction calculations **** //
@@ -262,11 +195,11 @@ Driver.prototype.shouldBreakInBend = function() {
     var radiusInLane = piece.radius + calculateLaneDistanceFromCenter(car, piece);
     var centripetSpeed = Math.pow(radianPerTick, 2) * radiusInLane;
 
-    var frictionFactor = this.frictionFactor;
+    var frictionFactor = this.breakingFactor;
 
-    var perfectSpeed = Math.sqrt(radiusInLane / this.frictionFactor * 9.78);
+    var perfectSpeed = Math.sqrt(radiusInLane / this.breakingFactor * 9.78);
     //var ticksToTargetAngle = ticksToAngle(car, maxAngle);
-    var ticksToTargetAngle = ticksToAngle(car, maxAngle);
+    var ticksToTargetAngle = ticksToAngle(car, piece, maxAngle);
     var ticksToTargetSpeed = ticksToSpeed(car.currentSpeed, perfectSpeed , frictionFactor )
 
     console.log(" ticksToTargAngle: " + ticksToTargetAngle
@@ -281,7 +214,7 @@ Driver.prototype.shouldBreakInBend = function() {
         return false;
     if(car.angleSpeed < 0)
         return false;
-    if(ticksToTargetAngle > 3)
+    if(ticksToTargetAngle > ticksToTargetSpeed)
         return false;
     return true;
 
@@ -299,13 +232,14 @@ function ticksToSpeed(currentSpeed, targetSpeed, frictionFactor){
     return ticksLeftToTargetSpeed - 5;
 }
 //#added
-function ticksToAngle(car, targetAngle){
+function ticksToAngle(car, piece, targetAngle){
 
     var currentAngle = car.angle;
-    var angleSpeedDecreasing = (car.angleSpeed < 0 && car.angle > 0)
-                                || (car.angleSpeed > 0 && car.angle < 0);
-    if(angleSpeedDecreasing)
-        return Infinity;
+    if(piece.angle < 0 && targetAngle > 0)
+        targetAngle *= -1;
+    else if(piece.angle > 0 && targetAngle < 0)
+        targetAngle *= -1;
+
     return Math.abs((targetAngle - currentAngle) / car.angleSpeed )
 
 
@@ -333,20 +267,25 @@ Driver.prototype.shouldBreak = function(){
     var distanceToBend = car.distanceToBend();
     var distanceToBendAhead = car.distanceToPiece(car.bendsAhead[1]);
 
+    var nextBendPiece = car.bendsAhead[0];
+    var nextNextBendPiece = car.bendsAhead[1];
+
     // Target speed to entering bends. It'll be calculated using bend radius and size
-    var targetSpeed = targetSpeedCalc(car, car.bendsAhead[0], this.frictionFactor);
-    var targetSpeedForBendAhead = targetSpeedCalc(car, car.bendsAhead[1], this.frictionFactor);
+    //I can't pass simply the next lane. It is gotta be the next lane only if there's
+    // a switch before it. Otherwise I'll pass the current lane
+    var targetSpeed = nextBendPiece.targetSpeed(car.laneInNextBend(), this.breakingFactor);
+    var targetSpeedForBendAhead = nextNextBendPiece.targetSpeed(car.laneInNextBend(), this.breakingFactor);
 
     if(car.inLastStraight())
         return false;
 
     // Verify if it is time to break for the bend 2x ahead
-    //if(isTimeToBreak(currentSpeed, distanceToBend2TimesAhead, targetSpeedForBend2TimesAhead, this.frictionFactor)){
+    //if(isTimeToBreak(currentSpeed, distanceToBend2TimesAhead, targetSpeedForBend2TimesAhead, this.breakingFactor)){
     //    console.log(" breaking for bend 2x ahead... ")
     //    return true;
     //}
     // Verify if it is time to break for the bend ahead
-    if(isTimeToBreak(currentSpeed, distanceToBendAhead, targetSpeedForBendAhead, this.frictionFactor)){
+    if(isTimeToBreak(currentSpeed, distanceToBendAhead, targetSpeedForBendAhead, this.breakingFactor)){
         console.log(" breaking for bend ahead... ");
         return true;
     }
@@ -355,7 +294,7 @@ Driver.prototype.shouldBreak = function(){
     //    return false;
 
     // Verify if it is time to break for the next bend
-    return isTimeToBreak(currentSpeed, distanceToBend, targetSpeed, this.frictionFactor);
+    return isTimeToBreak(currentSpeed, distanceToBend, targetSpeed, this.breakingFactor);
 };
 
 function isTimeToBreak(currentSpeed, distanceToBend, targetSpeed, frictionFactor){
@@ -364,7 +303,7 @@ function isTimeToBreak(currentSpeed, distanceToBend, targetSpeed, frictionFactor
     // fully breaking in a Straight piece.
     // It'll be calculated for each race when breaking in the firsts bends because of the
     // possibility to have a value for each track
-    //var frictionFactor = 49;
+    //var breakingFactor = 49;
 
     // Now with the target speed adjusted, I don't see this use, but I'll let it here for now
     // This is a delay for breaking. Less, the pilot breaks earlier, more the pilot breaks later.
@@ -404,17 +343,16 @@ function isTimeToBreak(currentSpeed, distanceToBend, targetSpeed, frictionFactor
     return false;
 }
 
-function willSlip(car, maxAngle){
+function willCrash(car, maxAngle){
     var angleAbs = Math.abs(car.angle);
-    var nextBendPiece = car.bendsAhead[0];
 
     var ticksToNextBend = car.distanceToBend() / car.lastSpeed;
-    var ticksToAngleSixty = Math.abs((maxAngle - angleAbs) / car.angleSpeed);
+    var ticksToAngleSixty = Math.abs(maxAngle - angleAbs) / car.angleSpeed;
 
     // Fator que aumenta o numero de ticks necessarios para o carro chegar ao angulo 60. Utilizado para evitar
     // que o carro chegue ao angulo 60 e derrape.
     // TODO: Alterar essa variavel para uma constante de Driver;
-    var securityFactor = 1;
+    var securityFactor = 4;
 
     var angleIsIncreasing = ( car.angleSpeed > 0 && car.angle > 0 ) ||
                             ( car.angleSpeed < 0 && car.angle < 0 );
@@ -424,128 +362,37 @@ function willSlip(car, maxAngle){
                  angleIsIncreasing,
                  ticksToAngleSixty))
         return true;
-    /*
-    // TODO: TROCAR ESSE WORKAROUND POR UMA VALIDAÇÃO AJUSTADA PARA A PROXIMA CURVA (DEPOIS EU EXPLICO)
-    if(nextBendPiece.index > car.currentPiece + 1)
-        return false;
-    */
 
-    // Preventing ricochet by another way, keeping this code here just for a few more tests
     return false;
-    /*
-    // Prevent ricochet (rebound)
-    angleIsIncreasing = ( nextBendPiece.angle > 0 && car.angleSpeed > 0 ) ||
-                        ( nextBendPiece.angle < 0 && car.angleSpeed < 0 );
 
-    return checkSlip(ticksToNextBend,
+    //temporariamente desabilitado, vou refatorar
+    var bendPieceAhead = car.bendsAhead[1];
+    var angleDiff = 0;
+    if( bendPieceAhead.angle > 0)
+        angleDiff = Math.abs(maxAngle - car.angle);
+    else
+        angleDiff = Math.abs((maxAngle * -1) - car.angle);
+
+    var ticksToAngleSixtyOfBendAhead = angleDiff / car.angleSpeed;
+
+    // Prevent ricochet (rebound)
+    angleIsIncreasing = ( bendPieceAhead.angle > 0 && car.angleSpeed > 0 ) ||
+                        ( bendPieceAhead.angle < 0 && car.angleSpeed < 0 );
+
+    return checkSlip(car.distanceToPiece(car.bendsAhead[1]),
                      securityFactor,
                      angleIsIncreasing,
-                     ticksToAngleSixty);
-                     */
+                     ticksToAngleSixtyOfBendAhead);
+
 }
 
-function checkSlip(ticksToNextBend, securityFactor, angleIsIncreasing, ticksToAngleSixty) {
+function checkSlip(ticksToNextBend, securityFactor, angleIsIncreasing, ticksToAngleSixty, log) {
     if((ticksToNextBend + securityFactor > ticksToAngleSixty) &&
         angleIsIncreasing) {
-
         console.log("ticksToNextBend "+ ticksToNextBend + " ticksToAngleSixty " + ticksToAngleSixty);
         return true;
     }
     return false;
-}
-
-function targetSpeedCalc(car, piece, frictionFactor, log){
-    // New, beautiful and optimized calculation
-
-    // First, initialize many constants
-    const gravity = 9.78 ;
-    const secondsPerTick = 1/60;
-
-    const radius = piece.radius;
-    const radianAngle = piece.angleInRadians;
-    const angle = piece.angle;
-
-    var laneDistanceFromCenter = calculateLaneDistanceFromCenter(car, piece);
-
-    //console.log(laneDistanceFromCenter + " <<-- " + piece.laneDistanceFromCenter(lane))
-
-    var radiusInLane = radius + laneDistanceFromCenter;
-    var maxFriction = Math.sqrt( radiusInLane * (Math.abs(angle) / gravity ));
-    var targetSpeed = ( Math.sqrt( maxFriction * radiusInLane * gravity) / (50/3) )  ;
-
-
-
-    //if(log === true)
-    //    console.log(" speed original " + targetSpeed);
-
-    // 50% of the factor is defined by the bend and 50% by the friction factor
-    var factor = Math.abs( targetSpeed  / (radius * angle )) * 50;
-    targetSpeed -= targetSpeed * (factor * ( frictionFactor / 50)) ;
-
-
-    return targetSpeed;
-
-
-
-
-
-
-
-/*
-
- if(log === true)
- console.log(" speed original " + targetSpeed);
-
-
-
- var factor = Math.abs(targetSpeed / (radius * angle)) * 100;
-    targetSpeed -= targetSpeed * (factor) ;
- if(log === true)
- console.log(" speed 2 " + targetSpeed);
-
- var frictionMultiplier =Math.abs( (Math.pow(frictionFactor,2) / (Math.pow(targetSpeed,2) * Math.sqrt(Math.pow(frictionFactor,2)))) - 1 )/ (frictionFactor /10) ;
- if(log === true)
- console.log(" Multiplier " + frictionMultiplier);
- if(targetSpeed < Math.sqrt(frictionFactor))
- targetSpeed *= 1+ frictionMultiplier;
-
-    //if(targetSpeed < 4)
-    //    targetSpeed *= 1.15;
-    //else if(targetSpeed < 6)
-    //    targetSpeed *= 1.1;
- return targetSpeed;//*0.98;
-
- */
-
-
-
-
-
-
-
-
-
-
-    // Old calc
-    //var maxFriction = Math.sqrt( radiusInLane * (Math.abs(radianAngle) / gravity ))
-    //var targetSpeed = ( Math.sqrt( maxFriction * radiusInLane ) / 6 ) ;
-
-    // New calc (slower)
-    //var radiusInLane = radius + laneDistanceFromCenter;
-    //var targetSpeed = Math.sqrt( frictionFactor * radiusInLane * gravity) ;
-    //return targetSpeed / 60;
-
-    //Another calc
-    //var radiusInLane = radius + laneDistanceFromCenter;
-    //var maxFriction = Math.sqrt( radiusInLane * (Math.abs(angle) / gravity ))
-    //var fasterSpeed = ( Math.sqrt( maxFriction * radiusInLane ) / 6.0 )
-    //var radiusInLane = radius + laneDistanceFromCenter;
-    //var targetSpeed = Math.sqrt( frictionFactor * radiusInLane * gravity) ;
-    //var slowerSpeed = targetSpeed / 60.0;
-    //var targetSpeed = fasterSpeed - slowerSpeed;
-    //return  fasterSpeed - targetSpeed * 0.4;
-
-
 }
 
 // ***** Turbo intelligence ***** //
@@ -562,17 +409,18 @@ Driver.prototype.canTurbo = function() {
     if(currentAcc <= 0.0)
         return false;
 
+    // Check if the car angle is low enough to be safe to use the turbo
+    // -> The angle for turbo may must be lower, but the condition ahead should be enough. This is an alert point
+    if(car.angle > 10.0 || car.angle < -10.0)
+        return false;
+
     // If the currentPiece the car is on is a Bend, we have to check if the car is on its exit;
     if(currentPiece.type == "B") {
         // Check if the car is on the last half of the Bend;
         // -> It was not working harder bends, let's do this in the last quarter for now
-        var bendLength = currentPiece.lengthInLane(car.lane);
-        if(car.inPieceDistance < (bendLength * 0.75))
-            return false;
-
-        // Check if the car angle is low enough to be safe to use the turbo
-        // -> The angle for turbo may must be lower, but the condition ahead should be enough. This is an alert point
-        if(car.angle > 45.0 || car.angle < -45.0)
+        var bendLength = currentPiece.bendLength(false, car.lane);
+        if(Piece.distanceFromPieceToPiece(car.straightPieceBefore, currentPiece)
+                < (bendLength * 0.75))
             return false;
     }
 
@@ -601,6 +449,7 @@ Driver.prototype.determineSwitchDirection = function() {
     var segmentsToCheck = this.getSegmentsToCheck(car.track, car.lane, switchesAhead);
     var bestLaneToSwitch = this.getBestLaneToSwitch(segmentsToCheck);
     car.lastLane = car.lane;
+    car.nextLane = bestLaneToSwitch;
 
     var switchDirection = this.getSwitchDirection(car.lane, bestLaneToSwitch);
     return switchDirection;

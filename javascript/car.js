@@ -1,5 +1,6 @@
 var Piece = require('./piece.js');
 var Driver = require('./driver.js');
+var Lane = require('./lane.js');
 
 var BENDS_AHEAD_TO_VERIFY = 3;
 
@@ -32,14 +33,16 @@ function Car(data, track) {
     this.angleSpeed = 0.0;
     this.currentPiece = null;
     this.inPieceDistance = null;
-    this.lane = null;
 
     this.lap = null;
     this.bendsAhead = [];
     this.nextSwitchPiece = null;
 
     this.lastLane = null;
+    this.lane = null;
+    this.nextLane = null;
     this.lastPiece = null;
+    this.straightPieceBefore = null;
     this.lastInPieceDistance = 0.0;
     this.currentSpeed = 0.0;
     this.lastSpeed = 0.0;
@@ -83,6 +86,8 @@ Car.prototype.updateCarPosition = function(positionInfoArray) {
     this.getNextSwitchPiece();
 
     this.lastPiece = this.currentPiece;
+    if(this.currentPiece.type == "S")
+        this.straightPieceBefore = this.currentPiece;
     this.lastInPieceDistance = this.inPieceDistance;
     this.lastSpeed = this.currentSpeed;
 };
@@ -122,6 +127,13 @@ Car.prototype.inLastStraight = function() {
     }
     return false;
 };
+
+Car.prototype.laneInNextBend = function(){
+    // Calculates the lane that the car will be in next bend
+    if(this.nextSwitchPiece.index <= this.bendsAhead[0].index)
+        return this.nextLane;
+    return this.lane;
+}
 
 function declarePrivateMethods() {
 

@@ -84,7 +84,7 @@ function declarePrivateMethods() {
     };
 
     this.buildTrackPiece = function(piecesInfo, index) {
-        var piece = new Piece(piecesInfo[index], index);
+        var piece = new Piece(piecesInfo[index], index, this);
         var nextIndex = index + 1;
 
         if(nextIndex < piecesInfo.length)
