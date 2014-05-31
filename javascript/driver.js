@@ -6,7 +6,7 @@ function Driver(car) {
 	this.car = car;
 	this.checkSwitch = true;
 
-	this.bendFactor = 67500.0;
+    // Empyrical result;
     this.breakingFactor = 49.0;
 
     // Breaking-learn function
@@ -23,6 +23,7 @@ function Driver(car) {
 // ***** Throttle intelligence ***** //
 
 Driver.prototype.drive = function() {
+    console.log("carAngle: " + this.car.angle);
     var currentPiece = this.car.currentPiece;
     
     if (currentPiece.type == "S") {
@@ -30,7 +31,6 @@ Driver.prototype.drive = function() {
 
     } else if (currentPiece.type == "B") {
         return this.driveForBend();
-
     }
 
     return 1.0;
@@ -39,9 +39,7 @@ Driver.prototype.drive = function() {
 // ***** Speed calculations ***** //
 
 Driver.prototype.driveForStraight = function() {
-    console.log("carAngle: " + this.car.angle);
-
-    if (!this.shouldBreak()) {
+    if(!this.shouldBreakForTargetSpeed()) {
         this.ticksBreakingInStraight = 0;
         return 1.0;
     }
@@ -62,7 +60,7 @@ Driver.prototype.driveForBend = function() {
     var angleAbs = Math.abs(car.angle);
     var lastAngleAbs = Math.abs(car.lastAngle);
 
-    if(this.shouldBreakInBend() || this.shouldBreak())
+    if(this.shouldBreakInBend() || this.shouldBreakForTargetSpeed())
         return 0.0;
 
     if(willCrash(car, 60))
@@ -188,89 +186,6 @@ function ticksToAngle(car, piece, targetAngle){
     */
 }
 
-Driver.prototype.shouldBreak = function(){
-    var car = this.car;
-    var currentSpeed = car.currentSpeed;
-
-    var distanceToBend = car.distanceToBend();
-    var distanceToBendAhead = car.distanceToPiece(car.bendsAhead[1]);
-
-    var nextBendPiece = car.bendsAhead[0];
-    var nextNextBendPiece = car.bendsAhead[1];
-
-    // Target speed to entering bends. It'll be calculated using bend radius and size
-    //I can't pass simply the next lane. It is gotta be the next lane only if there's
-    // a switch before it. Otherwise I'll pass the current lane
-    var targetSpeed = nextBendPiece.targetSpeed(car.laneInNextBend(), this.breakingFactor);
-    var targetSpeedForBendAhead = nextNextBendPiece.targetSpeed(car.laneInNextBend(), this.breakingFactor);
-
-    if(car.inLastStraight())
-        return false;
-
-    // Verify if it is time to break for the bend 2x ahead
-    //if(isTimeToBreak(currentSpeed, distanceToBend2TimesAhead, targetSpeedForBend2TimesAhead, this.breakingFactor)){
-    //    console.log(" breaking for bend 2x ahead... ")
-    //    return true;
-    //}
-    // Verify if it is time to break for the bend ahead
-    if(isTimeToBreak(currentSpeed, distanceToBendAhead, targetSpeedForBendAhead, this.breakingFactor)){
-        console.log(" breaking for bend ahead... ");
-        return true;
-    }
-    // If it is in a bend, only verify the bend ahead speed. Logic for bend speed is in speed in bend function
-    //if(car.currentPiece.type == "B")
-    //    return false;
-
-    // Verify if it is time to break for the next bend
-    return isTimeToBreak(currentSpeed, distanceToBend, targetSpeed, this.breakingFactor);
-};
-
-function isTimeToBreak(currentSpeed, distanceToBend, targetSpeed, frictionFactor){
-
-    // FrictionFactor is the relation between speed and negative acceleration when the car is
-    // fully breaking in a Straight piece.
-    // It'll be calculated for each race when breaking in the firsts bends because of the
-    // possibility to have a value for each track
-    //var breakingFactor = 49;
-
-    // Now with the target speed adjusted, I don't see this use, but I'll let it here for now
-    // This is a delay for breaking. Less, the pilot breaks earlier, more the pilot breaks later.
-    // 4 - 5 value makes the pilot break pretty securely and close to the bend.
-    // Smaller values may be used when the car is in the inner lane, greater when it is in the outer lane
-    // carefully, of course
-    var breakingTicksDelay = -3 ;
-
-    // Now with the target speed adjusted, I don't see this use, but I'll let it here for now
-    // lower speeds needs less breaking tick delay
-    //if(targetSpeed < 5)
-    //    breakingTicksDelay--;
-
-    var speedDiff = currentSpeed - targetSpeed;
-    // If the speed is less than target speed there's no need to break
-    if(speedDiff <= 0)
-        return false;
-
-    // Calculate the breaking acceleration if the car fully breaks with current speed
-    var currentBreakAcceleration = currentSpeed / frictionFactor;
-    // Calculate the breaking acceleration in target speed
-    var targetBreakAcceleration = targetSpeed / frictionFactor;
-    // Calculate the average of both breaking accelerations measured upper
-    var breakAccelerationAverage = ((currentBreakAcceleration + targetBreakAcceleration) / 2);
-    // Calculate the ticks left to the car get into speedTarget
-    var ticksLeftToTargetSpeed = speedDiff / breakAccelerationAverage;
-    var ticksLeftToBendOnCurrentSpeed = distanceToBend / currentSpeed;
-
-    //If the car needs more ticks to break than the ticks left to achieve the target speed,
-    // then it is time to break, otherwise, step on it!
-    if( ticksLeftToBendOnCurrentSpeed + breakingTicksDelay < ticksLeftToTargetSpeed ){
-        //console.log("ticksLeftToBendOnCurrentSpeed: " + ticksLeftToBendOnCurrentSpeed +
-        //    " ticksLeftToTargetSpeed: " + ticksLeftToTargetSpeed)
-        return true;
-    }
-
-    return false;
-}
-
 function willCrash(car, maxAngle){
     var angleAbs = Math.abs(car.angle);
 
@@ -390,6 +305,59 @@ function declarePrivateMethods() {
 
             this.breakingFactors.splice(indexToRemove, 1);
         }
+    };
+
+    // ***** Breaking intelligence ***** //
+
+    this.shouldBreakForTargetSpeed = function() {
+        if(this.car.inLastStraight())
+            return false;
+
+        var car = this.car;
+        var nextBendPiece = car.bendsAhead[0];
+        var targetSpeed = nextBendPiece.targetSpeed(car.laneInNextBend(), this.breakingFactor);
+
+        if(car.currentSpeed < targetSpeed)
+            return false;
+
+        return this.isTimeToBreakForTargetSpeed(targetSpeed);
+    };
+
+    this.isTimeToBreakForTargetSpeed = function(targetSpeed) {
+        var currentSpeed = this.car.currentSpeed;
+        var speedDiff = currentSpeed - targetSpeed;
+
+        // Calculate the breaking acceleration if the car fully breaks with current speed
+        var currentBreakAcceleration = currentSpeed / this.breakingFactor;
+
+        // Calculate the breaking acceleration in target speed
+        var targetBreakAcceleration = targetSpeed / this.breakingFactor;
+
+        // Calculate the average of both breaking accelerations
+        var breakAccelerationAverage = ((currentBreakAcceleration + targetBreakAcceleration) / 2.0);
+
+        // Calculate the ticks left to the car get into speedTarget
+        var ticksLeftToTargetSpeed = Math.ceil(speedDiff / breakAccelerationAverage);
+
+        // Calculate the ticks left to entering the next bend
+        var distanceToBend = this.car.distanceToBend();
+        var ticksLeftToBendOnCurrentSpeed = this.getTicksToTravelDistance(distanceToBend,
+                                                                          currentSpeed,
+                                                                          breakAccelerationAverage);
+
+        // If the car needs more ticks to break than the ticks left to achieve the target speed,
+        // then it is time to break, otherwise, step on it!
+        return (ticksLeftToBendOnCurrentSpeed < ticksLeftToTargetSpeed);
+    };
+
+    this.getTicksToTravelDistance = function(distance, speed, acceleration) {
+        var ticks = 0;
+        while(distance > 0.0) {
+            distance -= speed + (acceleration * ticks);
+            ticks++;
+        }
+
+        return ticks;
     };
 }
 
