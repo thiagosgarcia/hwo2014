@@ -63,6 +63,14 @@ Piece.prototype.targetSpeed = function(lane, breakingFactor){
     return this.targetSpeeds[lane.index];
 };
 
+Piece.prototype.bendLength = function(sameDirection, lane){
+    if(!!sameDirection){
+        return this.sameDirectionBendLength(lane);
+    }
+
+    return this.chicaneBendLength(lane);
+};
+
 Piece.distanceFromPieceToPiece = function(pieceFrom, pieceTo, laneFrom, laneTo) {
     var toPieceDistance = 0;
     var pieceToVerify = pieceFrom;
@@ -75,14 +83,6 @@ Piece.distanceFromPieceToPiece = function(pieceFrom, pieceTo, laneFrom, laneTo) 
     }
 
     return toPieceDistance;
-};
-
-Piece.prototype.bendLength = function(sameDirection, lane){
-    if(!!sameDirection){
-        return this.sameDirectionBendLength(lane);
-    }
-
-    return this.chicaneBendLength(lane);
 };
 
 function declarePrivateMethods() {

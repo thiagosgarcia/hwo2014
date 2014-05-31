@@ -2,6 +2,8 @@ require('./array.median.js');
 var SwitchAI = require('./switchAI.js');
 var TurboAI = require('./turboAI.js');
 
+const ANGLE_TO_CRASH = 60.0;
+
 function Driver(car) {
 	this.car = car;
 	this.checkSwitch = true;
@@ -36,8 +38,6 @@ Driver.prototype.drive = function() {
     return 1.0;
 };
 
-// ***** Speed calculations ***** //
-
 Driver.prototype.driveForStraight = function() {
     if(!this.shouldBreakForTargetSpeed()) {
         this.ticksBreakingInStraight = 0;
@@ -53,12 +53,13 @@ Driver.prototype.driveForStraight = function() {
 
 Driver.prototype.driveForBend = function() {
     var car = this.car;
-    console.log(" carAngle: " + car.angle);
-
     this.ticksBreakingInStraight = 0;
 
     var angleAbs = Math.abs(car.angle);
     var lastAngleAbs = Math.abs(car.lastAngle);
+
+    if(angleAbs < lastAngleAbs)
+        return 1.0;
 
     if(this.shouldBreakInBend() || this.shouldBreakForTargetSpeed())
         return 0.0;
@@ -66,9 +67,7 @@ Driver.prototype.driveForBend = function() {
     if(willCrash(car, 60))
         return 0.0;
 
-    if(angleAbs < lastAngleAbs)
-        return 1;
-
+    // TODO: deve ser refatorado usando a aceleração angular ao inves de 4.0
     var angleDiff = angleAbs - lastAngleAbs;
     if (angleDiff > 4.0)
         return 0.0;
@@ -77,6 +76,7 @@ Driver.prototype.driveForBend = function() {
 };
 
 // ***** Direction calculations **** //
+// TODO: me explicar isso
 function calculateLaneDistanceFromCenter(car, piece){
 
     const lane = car.lane;
@@ -101,50 +101,6 @@ function calculateLaneDistanceFromCenter(car, piece){
 
 // ***** Breaking calculations ***** //
 
-//#added
-Driver.prototype.shouldBreakInBend = function() {
-
-    var car = this.car;
-    var piece = this.car.currentPiece;
-    var maxAngle = 60;
-
-    if(piece.type == "S")
-        return null;
-
-    var pieceLength = piece.lengthInLane(car.lane);
-    var inPiecePosition = car.inPieceDistance;
-    var angleInRadians = car.angleInRadians;
-    var inPieceRadianPosition = angleInRadians * inPiecePosition / pieceLength;
-    var inPieceLastRadianPosition = angleInRadians * car.inPieceDistance - car.acceleration / pieceLength;
-
-    var radianPerTick = inPieceRadianPosition - inPieceLastRadianPosition;
-    var radiusInLane = piece.radius + calculateLaneDistanceFromCenter(car, piece);
-    var centripetSpeed = Math.pow(radianPerTick, 2) * radiusInLane;
-
-    var frictionFactor = this.breakingFactor;
-
-    var perfectSpeed = Math.sqrt(radiusInLane / this.breakingFactor * 9.78);
-    //var ticksToTargetAngle = ticksToAngle(car, maxAngle);
-    var ticksToTargetAngle = ticksToAngle(car, piece, maxAngle);
-    var ticksToTargetSpeed = ticksToSpeed(car.currentSpeed, perfectSpeed , frictionFactor )
-
-    console.log(" ticksToTargAngle: " + ticksToTargetAngle
-        + " | ticksToTargSpeed: " + ticksToTargetSpeed
-        + " | angleSpeed: " + car.angleSpeed
-        + " | angleAcc: " + car.angleAcceleration
-        + " | angleAccFactor: " + car.angleAccelerationFactor
-        + " | " + perfectSpeed );
-
-    var securityMaxAngleTicksFactor = 3;
-    if(car.currentSpeed <= perfectSpeed)
-        return false;
-    if(car.angleSpeed < 0)
-        return false;
-    if(ticksToTargetAngle > ticksToTargetSpeed)
-        return false;
-    return true;
-
-};
 //#added
 function ticksToSpeed(currentSpeed, targetSpeed, frictionFactor){
     var speedDiff = currentSpeed - targetSpeed;
@@ -349,6 +305,49 @@ function declarePrivateMethods() {
         // then it is time to break, otherwise, step on it!
         return (ticksLeftToBendOnCurrentSpeed < ticksLeftToTargetSpeed);
     };
+
+    this.shouldBreakInBend = function() {
+
+        var car = this.car;
+        var piece = this.car.currentPiece;
+
+        var pieceLength = piece.lengthInLane(car.lane);
+        var inPiecePosition = car.inPieceDistance;
+        var angleInRadians = car.angleInRadians;
+        var inPieceRadianPosition = angleInRadians * inPiecePosition / pieceLength;
+        var inPieceLastRadianPosition = angleInRadians * car.inPieceDistance - car.acceleration / pieceLength;
+
+        var radianPerTick = inPieceRadianPosition - inPieceLastRadianPosition;
+        var radiusInLane = piece.radius + calculateLaneDistanceFromCenter(car, piece);
+        var centripetSpeed = Math.pow(radianPerTick, 2) * radiusInLane;
+
+        var frictionFactor = this.breakingFactor;
+
+        var perfectSpeed = Math.sqrt(radiusInLane / this.breakingFactor * 9.78);
+        //var ticksToTargetAngle = ticksToAngle(car, maxAngle);
+        var ticksToTargetAngle = ticksToAngle(car, piece, maxAngle);
+        var ticksToTargetSpeed = ticksToSpeed(car.currentSpeed, perfectSpeed , frictionFactor );
+
+        console.log(" ticksToTargAngle: " + ticksToTargetAngle
+            + " | ticksToTargSpeed: " + ticksToTargetSpeed
+            + " | angleSpeed: " + car.angleSpeed
+            + " | angleAcc: " + car.angleAcceleration
+            + " | angleAccFactor: " + car.angleAccelerationFactor
+            + " | " + perfectSpeed );
+
+        return (car.currentSpeed > perfectSpeed || ticksToTargetAngle <= ticksToTargetSpeed);
+/*
+        if(car.currentSpeed <= perfectSpeed)
+            return false;
+        if(car.angleSpeed < 0)
+            return false;
+        if(ticksToTargetAngle > ticksToTargetSpeed)
+            return false;
+        return true;
+*/
+    };
+
+    // ***** Utility methods ***** //
 
     this.getTicksToTravelDistance = function(distance, speed, acceleration) {
         var ticks = 0;
