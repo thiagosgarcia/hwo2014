@@ -82,6 +82,13 @@ Message.prototype.unknownMessage = function(data) {
     this.sendPing();
 };
 
+Message.prototype.error = function(e) {
+    console.log("Exception!");
+    console.log(e.stack);
+    this.sendPing();
+};
+
+
 function declarePrivateMethods(obj) {
 
     obj.send = function(json) {

@@ -42,8 +42,12 @@ jsonStream.on('data', function(data) {
         race.message[data.msgType](data);
     }
     catch(e) {
-        console.log(e);
-        race.message["unknownMessage"](data);
+        if(e instanceof TypeError)
+            race.message["unknownMessage"](data);
+        else {
+            race.message["error"](e);
+        }
+
     }
 });
 
