@@ -1,3 +1,4 @@
+require('./array.median.js');
 var SwitchAI = require('./switchAI.js');
 var TurboAI = require('./turboAI.js');
 
@@ -9,8 +10,8 @@ function Driver(car) {
     this.breakingFactor = 49.0;
 
     // Breaking-learn function
-    this.ticksBreaking = 0;
-    this.lastBreakingFactors = [];
+    this.ticksBreakingInStraight = 0;
+    this.breakingFactors = [];
     this.speedAccelerationFactor = 49;
 
     this.switchAI = new SwitchAI(this);
@@ -38,14 +39,17 @@ Driver.prototype.drive = function() {
 // ***** Speed calculations ***** //
 
 Driver.prototype.driveForStraight = function() {
-    console.log(" carAngle: " + this.car.angle);
+    console.log("carAngle: " + this.car.angle);
 
-    if ( !this.shouldBreak() ) {
-        this.ticksBreaking = 0;
+    if (!this.shouldBreak()) {
+        this.ticksBreakingInStraight = 0;
         return 1.0;
     }
 
-    this.calculateBreakingFactor();
+    this.ticksBreakingInStraight++;
+    if(this.isTimeToCalculateTheBreakingFactor())
+        this.calculateBreakingFactor();
+
     return 0.0;
 };
 
@@ -53,7 +57,7 @@ Driver.prototype.driveForBend = function() {
     var car = this.car;
     console.log(" carAngle: " + car.angle);
 
-    this.ticksBreaking = 0;
+    this.ticksBreakingInStraight = 0;
 
     var angleAbs = Math.abs(car.angle);
     var lastAngleAbs = Math.abs(car.lastAngle);
@@ -73,87 +77,6 @@ Driver.prototype.driveForBend = function() {
 
     return 1.0;
 };
-
-function averageOfNumberArray(numberArray, defaultValue){
-    if(numberArray.length == 0)
-        return defaultValue;
-
-    var i = -1;
-    var sum = 0.0;
-    while (++ i < numberArray.length){
-        sum += numberArray[i];
-    }
-    return sum / numberArray.length;
-}
-
-Driver.prototype.calculateBreakingFactor = function(){
-    // This will calculate the friction factor and...
-    // IMPORTANT! This function can only be called in a straight and when the car is breaking
-
-    // only in negative acceleration
-    if(this.car.acceleration > 0)
-        return;
-
-    // This is for breaking-learn functions
-    this.ticksBreaking ++;
-    console.log(" TicksBreaking " + this.lastBreakingFactors.length)
-    console.log(" Factors " + this.lastBreakingFactors);
-    // If less, the breaking speed is not ok for the calculation
-    if(this.ticksBreaking <= 3)
-        return;
-
-    // If the angle is too high, it must not calculate
-    if(this.car.angle > 6 || this.car.angle < -6)
-        return;
-
-    // To stay this array smaller, don't need too much data and take out the biggest and the lower
-    if(this.lastBreakingFactors.length > 21){
-        this.lastBreakingFactors.shift();
-        this.lastBreakingFactors.pop();
-    }
-
-    var car = this.car;
-    var speed = this.car.lastSpeed;
-    var acceleration = this.car.acceleration;
-
-    this.lastBreakingFactors.push(Math.abs(speed / acceleration));
-
-    if(this.lastBreakingFactors.length > 3){
-        this.breakingFactor = averageOfNumberArray(this.lastBreakingFactors, this.breakingFactor);
-        console.log(" New friction factor: " + this.breakingFactor);
-
-        // To stay this array clean, remove some elements out of the average.
-        // This is MOD 10, because I don't want to to this all the time. maybe 2 or 3 items are making this get
-        // out of the average
-        if(this.lastBreakingFactors.length % 5 != 0)
-            return;
-
-        // the most probably cause of a uncommon values are the lasts added ;)
-        this.lastBreakingFactors.sort(function(a,b){return a-b});
-        console.log(this.lastBreakingFactors);
-
-        //Math.floor for now, but we got to know if we use the upper or lower median
-        var med = this.lastBreakingFactors[Math.floor(this.lastBreakingFactors.length / 2)]
-
-        var i = -1;
-        while( ++ i < this.lastBreakingFactors.length ){
-
-            // Ajustar a variância pra 5%
-            if(this.lastBreakingFactors[i] > med * 1.025
-                || this.lastBreakingFactors[i] < med * 0.975){
-                console.log(" Factor removed: " + this.lastBreakingFactors[i] + " Average: " + this.breakingFactor);
-                this.lastBreakingFactors.splice(i, 1);
-                // If something is removed, new average is set, otherwise, it'll return the same value
-                this.breakingFactor = averageOfNumberArray(this.lastBreakingFactors, this.breakingFactor);
-            }
-        }
-
-    }
-    // Adjust factor
-    this.breakingFactor;
-
-
-}
 
 // ***** Direction calculations **** //
 function calculateLaneDistanceFromCenter(car, piece){
@@ -414,6 +337,60 @@ Driver.prototype.determineSwitchDirection = function() {
 
 function declarePrivateMethods() {
 
+    // ***** Breaking Factor calculations ***** //
+
+    this.isTimeToCalculateTheBreakingFactor = function() {
+        // If the car started breaking less than 3 ticks ago, the breaking speed is still not ok for the calculation;
+        // If the angle is too high, it must not calculate;
+        return (this.car.acceleration < 0.0 &&
+                this.ticksBreakingInStraight > 3 &&
+                Math.abs(this.car.angle) <= 6);
+    };
+
+    this.calculateBreakingFactor = function() {
+        var currentAcc = this.car.acceleration;
+        var currentSpeed = this.car.lastSpeed;
+        var currentBreakingFactor = Math.abs(currentSpeed / currentAcc);
+
+        this.breakingFactors.push(currentBreakingFactor);
+        this.breakingFactors.sort(function(a,b){return a-b});
+
+        if(this.breakingFactors.length > 3) {
+            this.breakingFactor = this.getBreakingFactorsMedian();
+            console.log(" New breaking factor: " + this.breakingFactor);
+        }
+    };
+
+    this.getBreakingFactorsMedian = function() {
+        this.removeExcessBreakingFactors();
+        return this.breakingFactors.median();
+    };
+
+    this.removeExcessBreakingFactors = function() {
+        // Eliminate the pre-calculated breaking factors in the array extremes, if it gets too big.
+        if(this.breakingFactors.length > 21) {
+            this.breakingFactors.shift();
+            this.breakingFactors.pop();
+        }
+
+        var median = this.breakingFactors.median();
+        var indexesToRemove = [];
+
+        // Remove the breaking factors that are 2.5% higher or lower than the array median.
+        for(var i = 0; i < this.breakingFactors.length; i++) {
+            var breakingFactor = this.breakingFactors[i];
+
+            if(breakingFactor > median * 1.025 || breakingFactor < median * 0.975) {
+                indexesToRemove.push(i);
+            }
+        }
+
+        for(i = 0; i < indexesToRemove.length; i++) {
+            var indexToRemove = indexesToRemove[i];
+
+            this.breakingFactors.splice(indexToRemove, 1);
+        }
+    };
 }
 
 module.exports = Driver;
