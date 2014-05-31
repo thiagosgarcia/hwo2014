@@ -3,6 +3,7 @@ function Piece(data, index, track) {
     this.track = track;
 
     this.nextPiece = null;
+    this.previousPiece = null;
     this.bendIndex = null;
 
     this.length = data.length;
@@ -80,6 +81,7 @@ Piece.prototype.bendLength = function(sameDirection, lane){
     if(!!sameDirection){
         return this.sameDirectionBendLength(lane);
     }
+
     return this.chicaneBendLength(lane);
 };
 
@@ -168,6 +170,7 @@ function declarePrivateMethods() {
         return bendLength;
 
     };
+
     this.chicaneBendLength = function(lane){
         var bendLength = this.lengthInBendLane(lane);
         var pieceToVerify = this.nextPiece;

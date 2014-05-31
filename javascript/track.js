@@ -25,13 +25,14 @@ function Track(data, raceInfo) {
 
 // This is 2 in 1 function, because one value depends on each other.
 // I know this is lazy, I'm sorry
-function biggestAndLastStraightIndexes(pieces){
+function biggestAndLastStraightIndexes(pieces) {
     var straightCount = 0;
 
     var biggestStraightIndex = 0;
     var biggestStraightCount = 0;
     var lastStraightIndex = -1;
     var i = pieces.length;
+
     while(i-- > 0){
         // On straight, it increments the counter
         if(pieces[i].type === "S"){
@@ -78,7 +79,9 @@ function declarePrivateMethods() {
     this.buildTrackPieces = function(piecesInfo) {
         this.buildTrackPiece(piecesInfo, 0);
         this.pieces.reverse();
+
         this.pieces[this.pieces.length - 1].nextPiece = this.pieces[0];
+        this.pieces[0].previousPiece = this.pieces[this.pieces.length - 1];
 
         this.calculateBendIndexes();
     };
@@ -90,8 +93,11 @@ function declarePrivateMethods() {
         if(nextIndex < piecesInfo.length)
             piece.nextPiece = this.buildTrackPiece(piecesInfo, nextIndex);
 
-        this.pieces.push(piece);
+        var nextPiece = piece.nextPiece;
+        if(nextPiece != null)
+            piece.nextPiece.previousPiece = piece;
 
+        this.pieces.push(piece);
         return piece;
     };
 
