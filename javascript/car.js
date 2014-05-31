@@ -94,16 +94,26 @@ Car.prototype.rechargeTurbo = function(turboInfo) {
     this.turboAvailable = true;
 };
 
+Car.prototype.distanceInCurrentBend = function() {
+    if(this.currentPiece.type == "S")
+        return 0.0;
+
+    var currentBendIndex = this.currentPiece.bendIndex;
+    var firstPieceInBend = this.currentPiece;
+    while(firstPieceInBend.previousPiece.bendIndex == currentBendIndex) {
+        firstPieceInBend = firstPieceInBend.previousPiece;
+    }
+
+    var distance = Piece.distanceFromPieceToPiece(firstPieceInBend, this.currentPiece, this.lane);
+    distance -= this.inPieceDistance;
+
+    return distance;
+};
+
 Car.prototype.distanceToBend = function() {
     var nextBend = this.bendsAhead[0];
 
     return this.distanceToPiece(nextBend);
-};
-
-Car.prototype.distanceInCurrentBend = function() {
-    var currentBendIndex = car.currentPiece.bendIndex;
-
-
 };
 
 Car.prototype.distanceToPiece = function(nextPiece, laneFrom, laneTo) {

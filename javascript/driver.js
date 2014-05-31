@@ -1,5 +1,5 @@
-var Piece = require('./piece.js');
 var SwitchAI = require('./switchAI.js');
+var TurboAI = require('./turboAI.js');
 
 function Driver(car) {
 	this.car = car;
@@ -14,6 +14,7 @@ function Driver(car) {
     this.speedAccelerationFactor = 49;
 
     this.switchAI = new SwitchAI(this);
+    this.turboAI = new TurboAI(this);
 
     declarePrivateMethods.call(this);
 }
@@ -25,11 +26,13 @@ Driver.prototype.drive = function() {
     
     if (currentPiece.type == "S") {
         return this.driveForStraight();
+
     } else if (currentPiece.type == "B") {
         return this.driveForBend();
+
     }
 
-    return 1;
+    return 1.0;
 };
 
 // ***** Speed calculations ***** //
@@ -399,42 +402,8 @@ function checkSlip(ticksToNextBend, securityFactor, angleIsIncreasing, ticksToAn
 
 // ***** Turbo intelligence ***** //
 
-// Determine, by the car position in the track, if this tick is the right moment
-// to use the active turbo;
 Driver.prototype.canTurbo = function() {
-
-    var car = this.car;
-    var currentPiece = car.currentPiece;
-    var currentAcc = this.car.acceleration;
-
-    // If the car is breaking (acc <= 0.0), the turbo will not be optmized
-    if(currentAcc <= 0.0)
-        return false;
-
-    // Check if the car angle is low enough to be safe to use the turbo
-    // -> The angle for turbo may must be lower, but the condition ahead should be enough. This is an alert point
-    if(car.angle > 10.0 || car.angle < -10.0)
-        return false;
-
-    // If the currentPiece the car is on is a Bend, we have to check if the car is on its exit;
-    if(currentPiece.type == "B") {
-        // Check if the car is on the last half of the Bend;
-        // -> It was not working harder bends, let's do this in the last quarter for now
-        var bendLength = currentPiece.bendLength(false, car.lane);
-        if(Piece.distanceFromPieceToPiece(car.straightPieceBefore, currentPiece)
-                < (bendLength * 0.75))
-            return false;
-    }
-
-    var distanceToBend = car.distanceToBend();
-    // The distance the car will travel while on turbo is determined by the following formula:
-    // Distance = Acc * TurboFactor * (Duration ^ 2)
-    var distanceInTurbo = 400.0; //(2 * currentAcc * car.turboFactor * Math.pow(car.turboDurationTicks, 2));
-    // We have to know as well at what distance from the bend the car will begin to break...
-
-    // If the distance to the next bend is greater than the distance the car will travel in Turbo, turbo away!
-    return (distanceToBend > distanceInTurbo || car.biggestStraightIndex === car.currentPiece.index
-            || car.inLastStraight());
+    return this.turboAI.determineTurboUse();
 };
 
 // ***** Switch intelligence ***** //
