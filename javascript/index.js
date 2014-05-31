@@ -4,13 +4,6 @@ var JSONStream = require('JSONStream');
 
 var Race = require("./race.js");
 
-/*
-var serverHost = "senna.helloworldopen.com";
-var serverPort = 8091;
-var botName = "Working Minds";
-var botKey = "rSOwFpIm+ddrdQ";
-*/
-
 var serverHost = process.argv[2];
 var serverPort = process.argv[3];
 var botName = process.argv[4];
