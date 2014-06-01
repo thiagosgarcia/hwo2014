@@ -17,7 +17,7 @@ function Piece(data, index, track) {
 
     declarePrivateMethods.call(this);
 
-    this.angleInRadians = this.getAngleInRadians(this.angle);
+    this.angleInRadians = Piece.angleInRadians(this.angle);
     this.type = this.getPieceType(data);
 
     this.hasSwitch = !!data.switch;
@@ -62,7 +62,6 @@ Piece.prototype.targetSpeed = function (lane, breakingFactor) {
         return Infinity;
 
     var targetSpeedAverage = this.calculateBendTargetSpeed(lane, breakingFactor);
-    var bendCounter = 1;
     var currentBendLength = this.bendLength(lane);
     var totalBendLength = 0;
 
@@ -77,10 +76,10 @@ Piece.prototype.targetSpeed = function (lane, breakingFactor) {
         && bendSameDirection
         && targetSpeedAverage > pieceToVerifyTargetSpeed) {
 
-        bendCounter++;
         currentBendLength = pieceToVerify.bendLength(lane);
-        targetSpeedAverage = ((targetSpeedAverage * totalBendLength) + (pieceToVerifyTargetSpeed * currentBendLength)) /
-            (totalBendLength + currentBendLength);
+        targetSpeedAverage = pieceToVerifyTargetSpeed;
+            //((targetSpeedAverage * totalBendLength) + (pieceToVerifyTargetSpeed * currentBendLength)) /
+            //(totalBendLength + currentBendLength);
 
         totalBendLength += currentBendLength;
         pieceToVerifyTargetSpeed = pieceToVerify.calculateBendTargetSpeed(lane, breakingFactor);
@@ -115,6 +114,10 @@ Piece.distanceFromPieceToPiece = function(pieceFrom, pieceTo, laneFrom, laneTo) 
     return toPieceDistance;
 };
 
+Piece.angleInRadians = function(angle) {
+    return (angle * Math.PI) / 180.0;
+};
+
 function declarePrivateMethods() {
 
     this.getPieceType = function(data) {
@@ -125,10 +128,6 @@ function declarePrivateMethods() {
         if(data.radius !== undefined) return "B";
 
         return "";
-    };
-
-    this.getAngleInRadians = function(angle) {
-        return angle * Math.PI / 180.0;
     };
 
     this.lengthInSwitchLane = function(laneFrom, laneTo) {
@@ -142,10 +141,9 @@ function declarePrivateMethods() {
     };
 
     this.lengthInBendLane = function(lane) {
-        var angleInRadians = (Math.PI * this.angle) / 180;
         var distanceToCenter = this.radius + this.laneDistanceFromCenter(lane);
 
-        return Math.abs(angleInRadians * distanceToCenter);
+        return Math.abs(this.angleInRadians * distanceToCenter);
     };
 
     this.laneDistanceFromCenter = function(lane) {
@@ -173,6 +171,9 @@ function declarePrivateMethods() {
         return this.targetSpeeds[lane.index];
     };
 
+    // TODO: conta doida. Refazer da seguinte forma:
+    // Descobrir a velocidade de entrada na qual o tempo de desacelerar até a maintenanceSpeed (ticksToSpeed)
+    // seja menor que o tempo de bater (ticksToAngle(60));
     this.calculateBendTargetSpeedForLane = function (lane, breakingFactor){
         const gravity = 9.78 ;
         const millisecondsPerTick = 50/3;
@@ -188,7 +189,6 @@ function declarePrivateMethods() {
         targetSpeed -= targetSpeed * (factor * ( breakingFactor / 50)) ;
 
         return targetSpeed;
-
     };
 
     this.bendExitPiece = function () {
@@ -252,11 +252,22 @@ function declarePrivateMethods() {
         return bendLength;
     };
 
-    this.bendAngle = function(){
-        var bendAngle = this.angle;
-        var pieceToVerify = this.nextPiece;
+    this.bendAngle = function() {
+        var bendIndex = this.bendIndex;
+        var firstBendPiece = null;
 
-        while(pieceToVerify.bendIndex == this.bendIndex){
+        for(var i = 0; i < this.track.pieces.length; i++) {
+            var piece = this.track.pieces[i];
+
+            if(piece.bendIndex == bendIndex) {
+                firstBendPiece = piece;
+                break;
+            }
+        }
+
+        var bendAngle = firstBendPiece.angle;
+        var pieceToVerify = firstBendPiece.nextPiece;
+        while(pieceToVerify.bendIndex == firstBendPiece.bendIndex){
             bendAngle += pieceToVerify.angle;
             pieceToVerify = pieceToVerify.nextPiece;
         }

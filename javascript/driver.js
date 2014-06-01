@@ -6,8 +6,8 @@ var TurboAI = require('./turboAI.js');
 const ANGLE_TO_CRASH = 60.0;
 
 function Driver(car) {
-	this.car = car;
-	this.checkSwitch = true;
+    this.car = car;
+    this.checkSwitch = true;
 
     // Empyrical result;
     this.breakingFactor = 49.0;
@@ -97,7 +97,7 @@ function declarePrivateMethods() {
 
         if(this.breakingFactors.length > 3) {
             this.breakingFactor = this.getBreakingFactorsMedian();
-            Logger.log(" New breaking factor: " + this.breakingFactor);
+            Logger.setBreakingFactor(this.breakingFactor);
         }
     };
 
@@ -140,9 +140,8 @@ function declarePrivateMethods() {
 
         var car = this.car;
         var nextBendPiece = car.bendsAhead[0];
-        var targetSpeed = nextBendPiece.targetSpeed(car.laneInNextBend(), this.breakingFactor)
-
-        Logger.log(" new target speed: ", targetSpeed);
+        var targetSpeed = nextBendPiece.targetSpeed(car.laneInNextBend(), this.breakingFactor);
+        Logger.setTargetSpeed(targetSpeed);
 
         if(car.currentSpeed < targetSpeed)
             return false;

@@ -33,7 +33,7 @@ function Logger(serverName) {
     this.nextBendPieceIndex = "";
     this.nextBendBendIndex = "";
     this.nextBendTargetLane = "";
-    this.nextBendTargetSpeed = "";
+    this.targetSpeed = "";
     this.nextBendDistance = "";
     this.distanceToNextBend = "";
     this.logs = [];
@@ -48,12 +48,12 @@ Logger.getInstance = function() {
         myLogger = new Logger();
     }
     return myLogger;
-}
+};
 
 Logger.log = function () {
     Logger.getInstance();
     myLogger.logs.push(arguments);
-}
+};
 
 Logger.refresh = function(car) {
     Logger.getInstance();
@@ -93,13 +93,24 @@ Logger.setThrottle = function(throttle) {
     myLogger.throttle = throttle;
 };
 
+Logger.setTargetSpeed = function(targetSpeed) {
+    Logger.getInstance();
+    myLogger.targetSpeed = targetSpeed;
+};
+
+Logger.setBreakingFactor = function(breakingFactor) {
+    Logger.getInstance();
+    myLogger.breakingFactor = breakingFactor;
+};
+
 function declarePrivateMethods() {
 
     this.outputTemplate =
 "Tick:                         %tick%\n\
 Time:                         %timePassed%\n\
 Lap:                          %currentLap%/%totalLaps%\n\
-Target speeds:                %targetSpeeds%\n\
+Target speed:                 %targetSpeed%\n\
+Breaking factor:              %breakingFactor%\n\
 Throttle:                     %throttle%\n\
 Speed:                        %speed%\n\
 Average Speed:                %averageSpeed%\n\
@@ -119,7 +130,8 @@ Logs:\n";
         output = output.replace("%timePassed%", this.timePassed + "s");
         output = output.replace("%currentLap%", this.currentLap);
         output = output.replace("%totalLaps%", this.totalLaps);
-        output = output.replace("%targetSpeeds%", this.printTargetSpeeds());
+        output = output.replace("%targetSpeed%", this.targetSpeed);
+        output = output.replace("%breakingFactor%", this.breakingFactor);
         output = output.replace("%throttle%", this.throttle);
         output = output.replace("%speed%", this.speed);
         output = output.replace("%averageSpeed%", this.averageSpeed);
