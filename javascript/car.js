@@ -152,6 +152,7 @@ Car.prototype.laneInNextBend = function(){
     // Calculates the lane that the car will be in next bend
     if(this.nextSwitchPiece.index <= this.bendsAhead[0].index)
         return this.nextLane;
+
     return this.lane;
 };
 

@@ -57,24 +57,45 @@ Piece.prototype.distanceToNextSwitch = function(laneFrom, laneTo) {
     return distance;
 };
 
-Piece.prototype.targetSpeed = function(lane, breakingFactor){
+Piece.prototype.targetSpeed = function (lane, breakingFactor) {
     if(!lane)
         return Infinity;
-    Logger.log("targetSpeed: " , this.targetSpeeds, " lane ", lane.index);
-    if(!!this.targetSpeeds[lane.index] &&
-            (this.lastBreakingFactor < breakingFactor * 1.0025
-            && this.lastBreakingFactor > breakingFactor * 0.9975) )
-        return this.targetSpeeds[lane.index];
 
-    this.calculateTargetSpeeds(breakingFactor);
+    var targetSpeedAverage = this.calculateBendTargetSpeed(lane, breakingFactor);
+    var bendCounter = 1;
+    var currentBendLength = this.bendLength(lane);
+    var totalBendLength = 0;
 
-    this.lastBreakingFactor = breakingFactor;
-    return this.targetSpeeds[lane.index];
+    totalBendLength += currentBendLength;
+    var pieceToVerify = this.bendExitPiece();
+    var pieceToVerifyTargetSpeed = pieceToVerify.calculateBendTargetSpeed(lane, breakingFactor);
+    var bendSameDirection =
+        (this.angle > 0 && pieceToVerify.angle > 0)
+        || this.angle < 0 && pieceToVerify.angle < 0;
+
+    while (pieceToVerify.type == "B"
+        && bendSameDirection
+        && targetSpeedAverage > pieceToVerifyTargetSpeed) {
+
+        bendCounter++;
+        currentBendLength = pieceToVerify.bendLength(lane);
+        targetSpeedAverage = ((targetSpeedAverage * totalBendLength) + (pieceToVerifyTargetSpeed * currentBendLength)) /
+            (totalBendLength + currentBendLength);
+
+        totalBendLength += currentBendLength;
+        pieceToVerifyTargetSpeed = pieceToVerify.calculateBendTargetSpeed(lane, breakingFactor);
+        pieceToVerify = pieceToVerify.bendExitPiece();
+        bendSameDirection =
+            (this.angle > 0 && pieceToVerify.angle > 0)
+            || this.angle < 0 && pieceToVerify.angle < 0;
+    }
+
+    return targetSpeedAverage;
 };
 
 Piece.prototype.bendLength = function(sameDirection, lane){
     if(!!sameDirection){
-        return this.sameDirectionBendLength(lane);
+        return this.bendLength(lane);
     }
 
     return this.chicaneBendLength(lane);
@@ -137,18 +158,22 @@ function declarePrivateMethods() {
         return distanceFromCenter * directionMultiplier;
     };
 
-    this.calculateTargetSpeeds = function (breakingFactor) {
+    this.calculateBendTargetSpeed = function(lane, breakingFactor){
+        if(!!this.targetSpeeds[lane.index] &&
+            (this.lastBreakingFactor < breakingFactor * 1.0025
+                && this.lastBreakingFactor > breakingFactor * 0.9975) )
+            return this.targetSpeeds[lane.index];
 
         var lanes = this.track.lanes;
-
         for( var i = 0; i < lanes.length; i++ ){
-            this.targetSpeeds[i] =
-                this.calculateTargetSpeedForLane(lanes[i], breakingFactor);
+            this.targetSpeeds[i] = this.calculateBendTargetSpeedForLane(lanes[i], breakingFactor);
         }
-        //Logger.log("targetSpeed: " , this.targetSpeeds);
+
+        this.lastBreakingFactor = breakingFactor;
+        return this.targetSpeeds[lane.index];
     };
 
-    this.calculateTargetSpeedForLane = function (lane, breakingFactor){
+    this.calculateBendTargetSpeedForLane = function (lane, breakingFactor){
         const gravity = 9.78 ;
         const millisecondsPerTick = 50/3;
 
@@ -166,7 +191,21 @@ function declarePrivateMethods() {
 
     };
 
-    this.sameDirectionBendLength = function(lane){
+    this.bendExitPiece = function () {
+        if(this.type == "S") return null;
+
+        var pieceToVerify = this.nextPiece;
+        while(pieceToVerify.bendIndex == this.bendIndex) {
+            pieceToVerify = pieceToVerify.nextPiece;
+        }
+
+        return pieceToVerify;
+    };
+
+    this.bendLength = function(lane) {
+        if(this.type == "S")
+            return 0.0;
+
         var bendLength = this.lengthInBendLane(lane);
         var pieceToVerify = this.nextPiece;
 
@@ -174,10 +213,30 @@ function declarePrivateMethods() {
             bendLength += pieceToVerify.lengthInBendLane(lane);
             pieceToVerify = pieceToVerify.nextPiece;
         }
+
         Logger.log("bend length ahead: ", bendLength);
+        return bendLength;
+    };
+
+    this.sameDirectionBendLength = function (lane){
+        var bendLength = this.lengthInBendLane(lane);
+        var pieceToVerify = this.nextPiece;
+        var bendSameDirection =
+            (this.angle > 0 && pieceToVerify.angle > 0)
+            || this.angle < 0 && pieceToVerify.angle < 0;
+
+        while (pieceToVerify.type == "B"
+            && bendSameDirection ){
+
+            bendLength+= pieceToVerify.length;
+
+            pieceToVerify = pieceToVerify.nextPiece;
+            bendSameDirection =
+                (this.angle > 0 && pieceToVerify.angle > 0)
+                || this.angle < 0 && pieceToVerify.angle < 0;
+        }
 
         return bendLength;
-
     };
 
     this.chicaneBendLength = function(lane){
@@ -191,7 +250,7 @@ function declarePrivateMethods() {
         }
         Logger.log("chicane length ahead: ", bendLength);
         return bendLength;
-    }
+    };
 
     this.bendAngle = function(){
         var bendAngle = this.angle;
