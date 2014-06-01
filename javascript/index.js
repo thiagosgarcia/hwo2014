@@ -2,14 +2,8 @@
 var net = require("net");
 var JSONStream = require('JSONStream');
 
+var Logger = require("./logger.js");
 var Race = require("./race.js");
-
-/*
-var serverHost = "senna.helloworldopen.com";
-var serverPort = 8091;
-var botName = "Working Minds";
-var botKey = "rSOwFpIm+ddrdQ";
-*/
 
 var serverHost = process.argv[2];
 var serverPort = process.argv[3];
@@ -24,7 +18,7 @@ var color = process.argv[9];
 var race = new Race();
 client = net.connect(serverPort, serverHost, function() {
     race.message.client = client;
-    return race.message.joinOfficialRace({
+    return race.message.joinCustomRace({
         botName: botName,
         botKey: botKey,
         trackName: trackName,
@@ -34,7 +28,7 @@ client = net.connect(serverPort, serverHost, function() {
     });
 });
 
-console.log("I'm", botName, "and connect to", serverHost + ":" + serverPort);
+Logger.log("I'm", botName, "and connect to", serverHost + ":" + serverPort);
 
 jsonStream = client.pipe(JSONStream.parse());
 jsonStream.on('data', function(data) {
@@ -42,11 +36,10 @@ jsonStream.on('data', function(data) {
         race.message[data.msgType](data);
     }
     catch(e) {
-        console.log(e);
-        race.message["unknownMessage"](data);
+        race.message["error"](data, e);
     }
 });
 
 jsonStream.on('error', function() {
-    console.log("Disconnected!");
+    Logger.log("Disconnected!");
 });
