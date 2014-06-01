@@ -2,216 +2,40 @@
 var net = require("net");
 var JSONStream = require('JSONStream');
 
-/*
-var serverHost = "senna.helloworldopen.com";
-var serverPort = 8091;
-var botName = "Working Minds";
-var botKey = "rSOwFpIm+ddrdQ";
-*/
+var Logger = require("./logger.js");
+var Race = require("./race.js");
 
 var serverHost = process.argv[2];
 var serverPort = process.argv[3];
 var botName = process.argv[4];
 var botKey = process.argv[5];
 
-console.log("I'm", botName, "and connect to", serverHost + ":" + serverPort);
+var trackName = process.argv[6];
+var password = process.argv[7];
+var carCount = process.argv[8];
+var color = process.argv[9];
 
+var race = new Race();
 client = net.connect(serverPort, serverHost, function() {
-    return send({
-    msgType: "join",
-    data: {
-        name: botName,
-        key: botKey
-    }
+    race.message.client = client;
+    return race.message.joinOfficialRace({
+        botName: botName,
+        botKey: botKey
+    });
 });
 
-});
-
-function send(json) {
-  client.write(JSON.stringify(json));
-  return client.write('\n');
-};
+Logger.log("I'm", botName, "and connect to", serverHost + ":" + serverPort);
 
 jsonStream = client.pipe(JSONStream.parse());
-
-// ***** Class imports ***** //
-var Piece = require("./piece.js");
-var Track = require("./track.js");
-var Car = require("./car.js");
-
-// ***** Race information objects ***** //
-var track = null;
-var myCar = null;
-var driver = null;
-
-// ***** Race events functions ***** //
-function createCar(info) {
-	myCar = new Car(info);
-	driver = myCar.driver;
-}
-
-function gameInit(info) {
-	track = new Track(info.race.track, info.race.raceSession);
-	myCar.track = track;
-}
-
-function race(info, gameTick) {
-	myCar.updateCarPosition(info);
-	
-	// Only check for turbo and switch sends if the game is already started
-	if(!!gameTick && !!myCar.acceleration) {	
-		checkTurbo();
-		checkSwitch();
-	}
-	throttle(driver.drive());
-	
-	log("tick " + gameTick + " : " + (Math.floor((gameTick / (60) % 100)*100) /100)  + " s"
-		+" | speed " + myCar.lastSpeed
-		+" | acc " + myCar.acceleration
-        +" | piece " + myCar.currentPiece.index + " (" + myCar.currentPiece.type + ")"
-        +" | lap " + myCar.lap
-		+" | nextBend " + myCar.distanceToBend()
-		//+" | lane " + myCar.lane.index
-		//+" | switch " + myCar.currentPiece.switch
-        //+" | Piece: lenght " + myCar.currentPiece.lengthInLane(myCar.track.lanes[0], myCar.track.lanes[1])
-        //+" . radius " + myCar.currentPiece.radius
-        //+" . angle " + myCar.currentPiece.angle
-		//+" | nextSwitch " + leftToNextSwitch(piecePosition.pieceIndex, carLane, piecePosition)
-	);
-	
-}
-
-function checkTurbo() {
-    if(myCar.turboAvailable && driver.canTurbo()) {
-		myCar.turboAvailable = false;
-		turbo();
-	}
-}
-
-function checkSwitch() {
-	if(driver.checkSwitch) {
-		var switchDirection = driver.determineSwitchDirection();
-		driver.checkSwitch = false;
-		
-		if(switchDirection != null) {
-			switchLane(switchDirection);
-		}
-	}
-}
-
-function rechargeTurbo(info){
-    myCar.rechargeTurbo(info);
-    
-    log("Turbo Recharged! " +
-        " | turboDurationTicks " + myCar.turboDurationTicks +
-        " | turboFactor " + myCar.turboFactor
-    );
-}
-
-// ***** Server communication functions ***** //
-function ping() {
-	send({
-		msgType: "ping",
-		data: {}
-	});
-}
-
-function throttle(val) {
-    if(val == 2.0)
-        turbo();
-
-    if(val > 1.0)
-        val = 1.0;
-    if(val < 0.0)
-        val = 0.0;
-        
-    log("throttle " + val);
-    send({
-        msgType: "throttle",
-        data: val
-    });
-
-    end = new Date();
-
-    if(start !== undefined && end !== undefined){
-        var executionTime = end.getUTCMilliseconds() - start.getUTCMilliseconds();
-        // If it took more than 60% of the time available, there's an alert
-        if(executionTime > (50 / 3) * 0.6)
-            console.log( "Execution time alert: " + (executionTime) + " ms of "
-                + (Math.floor((50 / (3) % 100)*100) /100) + " available for each tick!")
-    }
-}
-
-function switchLane(val) {
-	console.log('will switch to ' + val + ' lane');
-
-	send({
-		msgType: "switchLane",
-		data: val
-	});
-}
-
-function turbo() {
-	console.log("Turbo activated!");
-	
-	send({
-		msgType: "turbo",
-		data: "Geronimoooooo!!!"
-	});
-}
-var start;
-var end;
-// ***** Race events listener ***** //
 jsonStream.on('data', function(data) {
-
-    start = new Date();
-    var info = data['data'];
-    
-    switch(data.msgType) {
-    	case 'join':
-    		console.log('Joined race!');
-    		ping();
-    		break;
-    	case 'gameInit':
-    		gameInit(info);
-    		ping();
-    		break;
-    	case 'yourCar':
-    		createCar(info);
-    		ping();
-    		break;
-    	case 'gameStart':
-			console.log('Race started!');
-			ping();
-			break;
-    	case 'carPositions':
-            race(info, data['gameTick']);
-    		break;
-    	case 'turboAvailable':
-            rechargeTurbo(info);
-            ping();
-    		break;
-    	case 'lapFinished':
-    		console.log('Lap Finished');
-    		ping();
-    		break;
-    	case 'gameEnd':
-			console.log('Race ended!');
-			ping();
-			break;
-		default:
-            ping();
-			break;
+    try {
+        race.message[data.msgType](data);
+    }
+    catch(e) {
+        race.message["error"](data, e);
     }
 });
 
 jsonStream.on('error', function() {
-	return log("disconnected");
+    Logger.log("Disconnected!");
 });
-
-
-var DEBUG = true;
-function log(log){
-    if(DEBUG)
-        console.log(log);
-}
