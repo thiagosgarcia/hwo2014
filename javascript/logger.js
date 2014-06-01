@@ -20,10 +20,12 @@ function Logger(serverName) {
     this.myLogger = this;
 
     this.tick = 0;
+    this.timePassed = 0;
     this.throttle = "";
     this.currentLap = 1;
     this.totalLaps = Infinity;
     this.speed = "";
+    this.averageSpeed = "";
     this.speedAcceleration = "";
     this.angle = "";
     this.angleAcceleration = "";
@@ -32,6 +34,8 @@ function Logger(serverName) {
     this.nextBendBendIndex = "";
     this.nextBendTargetLane = "";
     this.nextBendTargetSpeed = "";
+    this.nextBendDistance = "";
+    this.distanceToNextBend = "";
     this.logs = [];
 
     this.counter = 0;
@@ -57,12 +61,14 @@ Logger.refresh = function(car) {
         myLogger.currentLap = car.lap + 1;
         myLogger.totalLaps = (!!car.track) ? car.track.laps : "";
         myLogger.speed = car.currentSpeed;
+        myLogger.averageSpeed = car.averageSpeed;
         myLogger.speedAcceleration = car.acceleration;
         myLogger.angle = car.angle;
         myLogger.angleAcceleration = car.angleSpeed;
-        myLogger.pieceIndex = (!!car.currentPiece) ? car.currentPiece.index : "";
+        myLogger.pieceIndex = (!!car.currentPiece) ? (car.currentPiece.index + " (" + car.currentPiece.type + ")") : "";
         myLogger.nextBendPieceIndex = (!!car.bendsAhead[0]) ? car.bendsAhead[0].index : "";
         myLogger.nextBendBendIndex = (!!car.bendsAhead[0]) ? car.bendsAhead[0].bendIndex : "";
+        myLogger.distanceToNextBend = (!!car.currentPiece) ? car.distanceToBend() : "";
         myLogger.nextBendTargetLane = (!!car.nextLane) ? car.nextLane.index : "";
         myLogger.targetSpeeds = (!!car.bendsAhead[0] && !!car.bendsAhead[0].targetSpeeds) ? car.bendsAhead[0].targetSpeeds : "";
     }
@@ -72,10 +78,14 @@ Logger.refresh = function(car) {
 
 Logger.setTick = function(tick) {
     Logger.getInstance();
-    if(tick == undefined)
+    if(tick == undefined) {
         myLogger.tick = 0;
-    else
+        myLogger.timePassed = 0;
+    }
+    else {
         myLogger.tick = tick;
+        myLogger.timePassed = (Math.floor((tick / (60) % 100)*100) / 100);
+    }
 };
 
 Logger.setThrottle = function(throttle) {
@@ -87,32 +97,38 @@ function declarePrivateMethods() {
 
     this.outputTemplate =
 "Tick:                         %tick%\n\
+Time:                         %timePassed%\n\
 Lap:                          %currentLap%/%totalLaps%\n\
 Target speeds:                %targetSpeeds%\n\
 Throttle:                     %throttle%\n\
 Speed:                        %speed%\n\
+Average Speed:                %averageSpeed%\n\
 Speed acceleration:           %speedAcceleration%\n\
 Angle:                        %angle%\n\
 Angle acceleration:           %angleAcceleration%\n\
 Piece:                        %pieceIndex%\n\
 Next bend:                    %nextBendPieceIndex%-%nextBendBendIndex%\n\
+Distance to next bend:        %distanceToNextBend%\n\
 Next lane:                    %nextBendTargetLane%\n\
 Logs:\n";
 
     this.print = function() {
         output = this.outputTemplate;
         output = output.replace("%tick%", this.tick);
+        output = output.replace("%timePassed%", this.timePassed + "s");
         output = output.replace("%currentLap%", this.currentLap);
         output = output.replace("%totalLaps%", this.totalLaps);
         output = output.replace("%targetSpeeds%", this.printTargetSpeeds());
         output = output.replace("%throttle%", this.throttle);
         output = output.replace("%speed%", this.speed);
+        output = output.replace("%averageSpeed%", this.averageSpeed);
         output = output.replace("%speedAcceleration%", this.speedAcceleration);
         output = output.replace("%angle%", this.angle);
         output = output.replace("%angleAcceleration%", this.angleAcceleration);
         output = output.replace("%pieceIndex%", this.pieceIndex);
         output = output.replace("%nextBendPieceIndex%", this.nextBendPieceIndex);
         output = output.replace("%nextBendBendIndex%", this.nextBendBendIndex);
+        output = output.replace("%distanceToNextBend%", this.distanceToNextBend);
         output = output.replace("%nextBendTargetLane%", this.nextBendTargetLane);
 
         process.stdout.write("\033[2J"); // clear screen

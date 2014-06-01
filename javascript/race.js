@@ -32,22 +32,6 @@ Race.prototype.run = function(data, gameTick) {
     };
 
     message = this.decideRaceAction(gameTick);
-
-    Logger.log("tick " + gameTick + " : " + (Math.floor((gameTick / (60) % 100)*100) /100)  + " s"
-        +" | speed " + ourCar.lastSpeed
-        +" | acc " + ourCar.acceleration
-        +" | piece " + ourCar.currentPiece.index + " (" + ourCar.currentPiece.type + ")"
-        +" | lap " + ourCar.lap
-        +" | nextBend " + ourCar.distanceToBend()
-        +" | angleSpeed " + ourCar.angleSpeed
-        //+" | lane " + ourCar.lane.index
-        //+" | switch " + ourCar.currentPiece.switch
-        //+" | Piece: lenght " + ourCar.currentPiece.lengthInLane(ourCar.track.lanes[0], ourCar.track.lanes[1])
-        //+" . radius " + ourCar.currentPiece.radius
-        //+" . angle " + ourCar.currentPiece.angle
-        //+" | nextSwitch " + leftToNextSwitch(piecePosition.pieceIndex, carLane, piecePosition)
-    );
-
     return message;
 };
 

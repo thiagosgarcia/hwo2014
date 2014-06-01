@@ -41,10 +41,14 @@ function Car(data, track) {
     this.lastLane = null;
     this.lane = null;
     this.nextLane = null;
+
     this.lastPiece = null;
     this.lastInPieceDistance = 0.0;
+
+    this.ticksPassed = 0;
     this.currentSpeed = 0.0;
     this.lastSpeed = 0.0;
+    this.averageSpeed = 0.0;
     this.acceleration = 0.0;
 
     this.turboAvailable = false;
@@ -78,6 +82,7 @@ Car.prototype.updateCarPosition = function(positionInfoArray) {
         this.angleAccelerationFactor = Math.abs(this.angleAcceleration - this.lastAngleAcceleration);
 
     this.updateCurrentSpeed();
+    this.updateAverageSpeed();
     this.acceleration = this.currentSpeed - this.lastSpeed;
 
     this.updateCheckSwitchFlag();
@@ -161,6 +166,11 @@ function declarePrivateMethods() {
         }
 
         this.currentSpeed = currentSpeed;
+    };
+
+    this.updateAverageSpeed = function() {
+        this.ticksPassed++;
+        this.averageSpeed = ((this.averageSpeed * (this.ticksPassed-1)) + this.currentSpeed) / this.ticksPassed;
     };
 
     this.updateAngleSpeed = function() {
