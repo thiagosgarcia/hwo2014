@@ -82,7 +82,9 @@ Car.prototype.updateCarPosition = function(positionInfoArray) {
         this.angleAccelerationFactor = Math.abs(this.angleAcceleration - this.lastAngleAcceleration);
 
     this.updateCurrentSpeed();
-    this.updateAverageSpeed();
+    if(this.currentSpeed > 0.0)
+        this.updateAverageSpeed();
+
     this.acceleration = this.currentSpeed - this.lastSpeed;
 
     this.updateCheckSwitchFlag();
