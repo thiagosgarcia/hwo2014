@@ -59,22 +59,22 @@ Car.prototype.updateCarPosition = function(positionInfoArray) {
     var positionInfo = getCarPositionInfo(this, positionInfoArray);
     var piecePosition = positionInfo.piecePosition;
 
+    this.currentPiece = this.track.pieces[piecePosition.pieceIndex];
+    this.lane = this.track.lanes[piecePosition.lane.endLaneIndex];
+    this.inPieceDistance = piecePosition.inPieceDistance;
+    this.lap = piecePosition.lap;
+
     this.lastAngle = this.angle;
     this.angle = positionInfo.angle;
 
     this.lastAngleSpeed = this.angleSpeed;
-    this.angleSpeed = this.angle - this.lastAngle;
+    this.angleSpeed = this.updateAngleSpeed();
 
     //Angle Acceleration #added
     this.lastAngleAcceleration = this.angleAcceleration;
     this.angleAcceleration = Math.abs(this.angleSpeed - this.lastAngleSpeed);
     if(this.angleAcceleration > 0)
         this.angleAccelerationFactor = Math.abs(this.angleAcceleration - this.lastAngleAcceleration);
-
-    this.currentPiece = this.track.pieces[piecePosition.pieceIndex];
-    this.lane = this.track.lanes[piecePosition.lane.endLaneIndex];
-    this.inPieceDistance = piecePosition.inPieceDistance;
-    this.lap = piecePosition.lap;
 
     this.updateCurrentSpeed();
     this.acceleration = this.currentSpeed - this.lastSpeed;
@@ -160,6 +160,21 @@ function declarePrivateMethods() {
         }
 
         this.currentSpeed = currentSpeed;
+    };
+
+    this.updateAngleSpeed = function() {
+        var angleSpeed = Math.abs(this.angle - this.lastAngle);
+        if(this.currentPiece.type == "S")
+            return angleSpeed;
+
+        var pieceAngle = this.currentPiece.angle;
+        var distanceToPieceAngle = Math.abs(pieceAngle - this.angle);
+        var lastDistanceToPieceAngle = Math.abs(pieceAngle - this.lastAngle);
+
+        if(distanceToPieceAngle > lastDistanceToPieceAngle)
+            angleSpeed *= -1;
+
+        return angleSpeed;
     };
 
     this.lastPieceDistance = function() {

@@ -37,6 +37,7 @@ Race.prototype.run = function(data, gameTick) {
         +" | piece " + ourCar.currentPiece.index + " (" + ourCar.currentPiece.type + ")"
         +" | lap " + ourCar.lap
         +" | nextBend " + ourCar.distanceToBend()
+        +" | angleSpeed " + ourCar.angleSpeed
         //+" | lane " + ourCar.lane.index
         //+" | switch " + ourCar.currentPiece.switch
         //+" | Piece: lenght " + ourCar.currentPiece.lengthInLane(ourCar.track.lanes[0], ourCar.track.lanes[1])
