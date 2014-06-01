@@ -110,6 +110,7 @@ Piece:                        %pieceIndex%\n\
 Next bend:                    %nextBendPieceIndex%-%nextBendBendIndex%\n\
 Distance to next bend:        %distanceToNextBend%\n\
 Next lane:                    %nextBendTargetLane%\n\
+\n\
 Logs:\n";
 
     this.print = function() {

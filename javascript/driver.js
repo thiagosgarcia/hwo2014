@@ -26,7 +26,6 @@ function Driver(car) {
 // ***** Throttle intelligence ***** //
 
 Driver.prototype.drive = function() {
-    Logger.log("carAngle: " + this.car.angle);
     var currentPiece = this.car.currentPiece;
 
     if (currentPiece.type == "S") {

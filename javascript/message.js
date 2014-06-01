@@ -86,8 +86,9 @@ Message.prototype.unknownMessage = function(data) {
     this.sendPing();
 };
 
-Message.prototype.error = function(e) {
-    Logger.log("Exception!");
+Message.prototype.error = function(data, e) {
+    Logger.log("Error!");
+    Logger.log(data);
     Logger.log(e.stack);
     this.sendPing();
 };
@@ -114,8 +115,6 @@ function declarePrivateMethods() {
             val = 1.0;
         if(val < 0.0)
             val = 0.0;
-
-        Logger.log("throttle " + val);
 
         this.send({
             msgType: "throttle",
