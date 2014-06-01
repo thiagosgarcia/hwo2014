@@ -1,3 +1,4 @@
+var Logger = require("./logger.js");
 var Piece = require('./piece.js');
 var Driver = require('./driver.js');
 
@@ -134,7 +135,7 @@ Car.prototype.inLastStraight = function() {
     if(this.track.lastStraightIndex <= this.currentPiece.index &&
         this.lap >= this.track.laps - 1) {
 
-        console.log("Last straight! Step on it!");
+        Logger.log("Last straight! Step on it!");
         return true;
     }
     return false;
@@ -177,7 +178,7 @@ function declarePrivateMethods() {
             (this.lastPiece.index != this.currentPiece.index) &&
             (this.currentPiece.hasSwitch)) {
 
-            console.log("The driver will check for the next switch again!!!");
+            Logger.log("The driver will check for the next switch again!!!");
             this.driver.checkSwitch = true;
             this.nextSwitchPiece = null;
         }

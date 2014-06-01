@@ -1,3 +1,4 @@
+var Logger = require("./logger.js");
 var Piece = require('./piece.js');
 var Lane = require('./lane.js');
 
@@ -70,7 +71,7 @@ function biggestAndLastStraightIndexes(pieces) {
             biggestStraightIndex = lastStraightIndex;
         }
     }
-    console.log(" Biggest straight: " + biggestStraightCount + " @ " + biggestStraightIndex );
+    Logger.log(" Biggest straight: " + biggestStraightCount + " @ " + biggestStraightIndex );
     // Store the last straight index so at the last lap, driver will never stop throttling
     return {biggestStraightIndex: biggestStraightIndex, lastStraightIndex: lastStraightIndex};
 }

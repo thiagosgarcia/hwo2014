@@ -2,6 +2,7 @@
 var net = require("net");
 var JSONStream = require('JSONStream');
 
+var Logger = require("./logger.js");
 var Race = require("./race.js");
 
 var serverHost = process.argv[2];
@@ -27,7 +28,7 @@ client = net.connect(serverPort, serverHost, function() {
     });
 });
 
-console.log("I'm", botName, "and connect to", serverHost + ":" + serverPort);
+Logger.log("I'm", botName, "and connect to", serverHost + ":" + serverPort);
 
 jsonStream = client.pipe(JSONStream.parse());
 jsonStream.on('data', function(data) {
@@ -45,5 +46,5 @@ jsonStream.on('data', function(data) {
 });
 
 jsonStream.on('error', function() {
-    console.log("Disconnected!");
+    Logger.log("Disconnected!");
 });

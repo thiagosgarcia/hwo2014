@@ -1,3 +1,4 @@
+var Logger = require("./logger.js");
 require('./array.median.js');
 var SwitchAI = require('./switchAI.js');
 var TurboAI = require('./turboAI.js');
@@ -25,9 +26,9 @@ function Driver(car) {
 // ***** Throttle intelligence ***** //
 
 Driver.prototype.drive = function() {
-    console.log("carAngle: " + this.car.angle);
+    Logger.log("carAngle: " + this.car.angle);
     var currentPiece = this.car.currentPiece;
-    
+
     if (currentPiece.type == "S") {
         return this.driveForStraight();
 
@@ -188,7 +189,7 @@ function willCrash(car, maxAngle){
 function checkSlip(ticksToNextBend, securityFactor, angleIsIncreasing, ticksToAngleSixty, log) {
     if((ticksToNextBend + securityFactor > ticksToAngleSixty) &&
         angleIsIncreasing) {
-        console.log("ticksToNextBend "+ ticksToNextBend + " ticksToAngleSixty " + ticksToAngleSixty);
+        Logger.log("ticksToNextBend "+ ticksToNextBend + " ticksToAngleSixty " + ticksToAngleSixty);
         return true;
     }
     return false;
@@ -228,7 +229,7 @@ function declarePrivateMethods() {
 
         if(this.breakingFactors.length > 3) {
             this.breakingFactor = this.getBreakingFactorsMedian();
-            console.log(" New breaking factor: " + this.breakingFactor);
+            Logger.log(" New breaking factor: " + this.breakingFactor);
         }
     };
 
@@ -328,7 +329,7 @@ function declarePrivateMethods() {
         var ticksToTargetAngle = ticksToAngle(car, piece, maxAngle);
         var ticksToTargetSpeed = ticksToSpeed(car.currentSpeed, perfectSpeed , frictionFactor );
 
-        console.log(" ticksToTargAngle: " + ticksToTargetAngle
+        Logger.log(" ticksToTargAngle: " + ticksToTargetAngle
             + " | ticksToTargSpeed: " + ticksToTargetSpeed
             + " | angleSpeed: " + car.angleSpeed
             + " | angleAcc: " + car.angleAcceleration

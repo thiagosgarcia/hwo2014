@@ -1,3 +1,5 @@
+var Logger = require("./logger.js");
+
 function Piece(data, index, track) {
     this.index = index;
     this.track = track;
@@ -51,7 +53,7 @@ Piece.prototype.distanceToNextSwitch = function(laneFrom, laneTo) {
 Piece.prototype.targetSpeed = function(lane, breakingFactor){
     if(!lane)
         return Infinity;
-    console.log("targetSpeed: " , this.targetSpeeds, " lane ", lane.index);
+    Logger.log("targetSpeed: " , this.targetSpeeds, " lane ", lane.index);
     if(!!this.targetSpeeds[lane.index] &&
             (this.lastBreakingFactor < breakingFactor * 1.0025
             && this.lastBreakingFactor > breakingFactor * 0.9975) )
@@ -136,7 +138,7 @@ function declarePrivateMethods() {
             this.targetSpeeds[i] =
                 this.calculateTargetSpeedForLane(lanes[i], breakingFactor);
         }
-        //console.log("targetSpeed: " , this.targetSpeeds);
+        //Logger.log("targetSpeed: " , this.targetSpeeds);
     };
 
     this.calculateTargetSpeedForLane = function (lane, breakingFactor){
@@ -165,7 +167,7 @@ function declarePrivateMethods() {
             bendLength += pieceToVerify.lengthInBendLane(lane);
             pieceToVerify = pieceToVerify.nextPiece;
         }
-        console.log("bend length ahead: ", bendLength);
+        Logger.log("bend length ahead: ", bendLength);
 
         return bendLength;
 
@@ -180,7 +182,7 @@ function declarePrivateMethods() {
             bendLength += pieceToVerify.lengthInBendLane(lane);
             pieceToVerify = pieceToVerify.nextPiece;
         }
-        console.log("chicane length ahead: ", bendLength);
+        Logger.log("chicane length ahead: ", bendLength);
         return bendLength;
     }
 

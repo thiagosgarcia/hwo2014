@@ -1,10 +1,13 @@
+var Logger = require("./logger.js");
+
 var client;
 var race;
+var car;
 
 function Message(race) {
     this.race = race;
 
-    declarePrivateMethods(this);
+    declarePrivateMethods.call(this);
 }
 
 Message.prototype.joinCustomRace = function(parameters) {
@@ -34,7 +37,7 @@ Message.prototype.joinOfficialRace = function(parameters) {
 };
 
 Message.prototype.join = function(data) {
-    console.log('Joined race!');
+    Logger.log('Joined race!');
     this.sendPing();
 };
 
@@ -43,7 +46,7 @@ Message.prototype.joinRace = function(data) {
 };
 
 Message.prototype.yourCar = function(data) {
-    this.race.createCar(data['data']);
+    this.car = this.race.createCar(data['data']);
     this.sendPing();
 };
 
@@ -53,11 +56,12 @@ Message.prototype.gameInit = function(data) {
 };
 
 Message.prototype.gameStart = function(data) {
-    console.log('Race started!');
+    Logger.log('Race started!');
     this.sendPing();
 };
 
 Message.prototype.carPositions = function(data) {
+    Logger.setTick(data['gameTick']);
     action = this.race.run(data['data'], data['gameTick']);
     this[action.type](action.value);
 };
@@ -68,66 +72,68 @@ Message.prototype.turboAvailable = function(data) {
 };
 
 Message.prototype.lapFinished = function(data) {
-    console.log('Lap finished.');
+    Logger.log('Lap finished.');
     this.sendPing();
 };
 
 Message.prototype.gameEnd = function(data) {
-    console.log('Race ended!');
+    Logger.log('Race ended!');
     this.sendPing();
 };
 
 Message.prototype.unknownMessage = function(data) {
-    console.log("Unknown message: ", data);
+    Logger.log("Unknown message: ", data);
     this.sendPing();
 };
 
 Message.prototype.error = function(e) {
-    console.log("Exception!");
-    console.log(e.stack);
+    Logger.log("Exception!");
+    Logger.log(e.stack);
     this.sendPing();
 };
 
 
-function declarePrivateMethods(obj) {
+function declarePrivateMethods() {
 
-    obj.send = function(json) {
+    this.send = function(json) {
+        Logger.refresh(this.car);
+
         this.client.write(JSON.stringify(json));
         return this.client.write('\n');
     };
 
-    obj.sendPing = function() {
-        obj.send({
+    this.sendPing = function() {
+        this.send({
             msgType: "ping",
             data: {}
         });
     };
 
-    obj.sendThrottle = function(val) {
+    this.sendThrottle = function(val) {
         if(val > 1.0)
             val = 1.0;
         if(val < 0.0)
             val = 0.0;
 
-        console.log("throttle " + val);
+        Logger.log("throttle " + val);
 
-        obj.send({
+        this.send({
             msgType: "throttle",
             data: val
         });
     };
 
-    obj.sendSwitchLane = function(val) {
-        console.log('Will switch to ' + val + ' lane');
+    this.sendSwitchLane = function(val) {
+        Logger.log('Will switch to ' + val + ' lane');
 
-        obj.send({
+        this.send({
             msgType: "switchLane",
             data: val
         });
     };
 
-    obj.sendTurbo = function() {
-        obj.send({
+    this.sendTurbo = function() {
+        this.send({
             msgType: "turbo",
             data: "Geronimoooooo!!!"
         });

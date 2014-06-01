@@ -1,3 +1,4 @@
+var Logger = require("./logger.js");
 var Message = require("./message.js");
 var Track = require("./track.js");
 var Car = require("./car.js");
@@ -20,6 +21,7 @@ Race.prototype.init = function(data) {
 Race.prototype.createCar = function(data) {
     ourCar = new Car(data);
     ourDriver = ourCar.driver;
+    return ourCar;
 };
 
 Race.prototype.run = function(data, gameTick) {
@@ -31,7 +33,7 @@ Race.prototype.run = function(data, gameTick) {
 
     message = this.decideRaceAction(gameTick);
 
-    console.log("tick " + gameTick + " : " + (Math.floor((gameTick / (60) % 100)*100) /100)  + " s"
+    Logger.log("tick " + gameTick + " : " + (Math.floor((gameTick / (60) % 100)*100) /100)  + " s"
         +" | speed " + ourCar.lastSpeed
         +" | acc " + ourCar.acceleration
         +" | piece " + ourCar.currentPiece.index + " (" + ourCar.currentPiece.type + ")"
@@ -51,7 +53,7 @@ Race.prototype.run = function(data, gameTick) {
 Race.prototype.rechargeTurbo = function(data) {
     ourCar.rechargeTurbo(data);
 
-    console.log("Turbo Recharged! " +
+    Logger.log("Turbo Recharged! " +
         " | turboDurationTicks " + ourCar.turboDurationTicks +
         " | turboFactor " + ourCar.turboFactor
     );
@@ -83,6 +85,7 @@ function declarePrivateMethods() {
 
         action.type = 'sendThrottle';
         action.value = ourDriver.drive();
+        Logger.setThrottle(action.value);
 
         return action;
     };
