@@ -35,6 +35,13 @@ Piece.prototype.lengthInLane = function(laneFrom, laneTo) {
     return this.length;
 };
 
+Piece.prototype.radiusInLane = function(lane) {
+    if(this.type == "S")
+        return 0.0;
+
+    return this.radius + lane.distanceFromCenter;
+};
+
 Piece.prototype.distanceToNextSwitch = function(laneFrom, laneTo) {
     var distance = this["distanceToNextSwitchForLanes" + laneFrom.index + "-" + laneTo.index];
     if(!!distance)
