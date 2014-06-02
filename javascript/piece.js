@@ -74,7 +74,8 @@ Piece.prototype.targetSpeed = function (lane, breakingFactor) {
 
     while (pieceToVerify.type == "B"
         && bendSameDirection
-        && targetSpeedAverage > pieceToVerifyTargetSpeed) {
+        //&& targetSpeedAverage > pieceToVerifyTargetSpeed
+        ) {
 
         currentBendLength = pieceToVerify.bendLength(lane);
         targetSpeedAverage = pieceToVerifyTargetSpeed;
@@ -175,6 +176,12 @@ function declarePrivateMethods() {
     // Descobrir a velocidade de entrada na qual o tempo de desacelerar até a maintenanceSpeed (ticksToSpeed)
     // seja menor que o tempo de bater (ticksToAngle(60));
     this.calculateBendTargetSpeedForLane = function (lane, breakingFactor){
+
+
+
+
+
+
         const gravity = 9.78 ;
         const millisecondsPerTick = 50/3;
 
