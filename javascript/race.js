@@ -15,6 +15,7 @@ function Race() {
 
 Race.prototype.init = function(data) {
     track = new Track(data.race.track, data.race.raceSession);
+    Logger.setTrack(data.race.track.name)
     ourCar.track = track;
 };
 

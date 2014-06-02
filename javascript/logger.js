@@ -19,6 +19,7 @@ function Logger(serverName) {
         throw new Exception("Logger is singleton!");
     this.myLogger = this;
 
+    this.track = "";
     this.tick = 0;
     this.timePassed = 0;
     this.throttle = "";
@@ -76,6 +77,11 @@ Logger.refresh = function(car) {
     myLogger.print();
 };
 
+Logger.setTrack = function(track) {
+    Logger.getInstance();
+    myLogger.track = track;
+};
+
 Logger.setTick = function(tick) {
     Logger.getInstance();
     if(tick == undefined) {
@@ -106,7 +112,8 @@ Logger.setBreakingFactor = function(breakingFactor) {
 function declarePrivateMethods() {
 
     this.outputTemplate =
-"Tick:                         %tick%\n\
+"Track:                         %track%\n\
+Tick:                         %tick%\n\
 Time:                         %timePassed%\n\
 Lap:                          %currentLap%/%totalLaps%\n\
 Target speed:                 %targetSpeed%\n\
@@ -126,6 +133,7 @@ Logs:\n";
 
     this.print = function() {
         output = this.outputTemplate;
+        output = output.replace("%track%", this.track);
         output = output.replace("%tick%", this.tick);
         output = output.replace("%timePassed%", this.timePassed + "s");
         output = output.replace("%currentLap%", this.currentLap);

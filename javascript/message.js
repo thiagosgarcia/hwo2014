@@ -21,7 +21,22 @@ Message.prototype.joinCustomRace = function(parameters) {
             },
             trackName: parameters.trackName,
             password: parameters.password,
-            carCount: parameters.carCount
+            carCount: parseInt(parameters.carCount)
+        }
+    });
+};
+
+Message.prototype.joinCustomMultiPlayerRace = function(parameters) {
+    return this.send({
+        msgType: "joinRace",
+        data: {
+            botId: {
+                name: parameters.botName,
+                key: parameters.botKey
+            },
+            trackName: parameters.trackName,
+            password: parameters.password,
+            carCount: parseInt(parameters.carCount)
         }
     });
 };

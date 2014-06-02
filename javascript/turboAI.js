@@ -9,7 +9,7 @@ TurboAI.prototype.determineTurboUse = function() {
 
     // If the car is breaking (acc <= 0.0), the turbo will not be optimized
     // Check if the car angle is low enough to be safe to use the turbo
-    if(currentAcc <= 0.0 || Math.abs(car.angle) > 10.0)
+    if(currentAcc <= 0.0 || Math.abs(car.angle) > 40.0)
         return false;
 
     if(car.inLastStraight())
