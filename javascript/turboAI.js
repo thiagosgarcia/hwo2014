@@ -17,6 +17,8 @@ TurboAI.prototype.determineTurboUse = function() {
 
     // If the currentPiece the car is on is a Bend, we have to check if the car is on its exit;
     if(currentPiece.type == "B") {
+        //TODO Refactor this! -><-
+        return false;
         var bendLength = currentPiece.bendLength(false, car.lane);
 
         if(car.distanceInCurrentBend() < (bendLength * 0.75))
@@ -27,7 +29,7 @@ TurboAI.prototype.determineTurboUse = function() {
     var distanceInTurbo = 400.0; //(2 * currentAcc * car.turboFactor * Math.pow(car.turboDurationTicks, 2));
 
     // If the distance to the next bend is greater than the distance the car will travel in Turbo, turbo away!
-    return distanceToBend > distanceInTurbo;
+    return distanceToBend > distanceInTurbo || car.biggestStraightIndex == currentPiece.index;
 };
 
 module.exports = TurboAI;
