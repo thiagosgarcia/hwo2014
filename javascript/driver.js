@@ -145,7 +145,6 @@ function declarePrivateMethods() {
         var nextBendPiece = car.bendsAhead[0];
         var targetSpeed = nextBendPiece.targetSpeed(car.laneInNextBend(), this.breakingFactor);
         Logger.setTargetSpeed(targetSpeed);
-        Logger.setMaintenanceSpeed(car.currentPiece.maintenanceSpeed.car.laneInNextBend());
 
         if(car.currentSpeed < targetSpeed)
             return false;
