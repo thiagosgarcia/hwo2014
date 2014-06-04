@@ -123,6 +123,7 @@ function declarePrivateMethods() {
         Average Speed:                %averageSpeed%\n\
         Speed acceleration:           %speedAcceleration%\n\
         Angle:                        %angle%\n\
+        Angle:                        %angleSpeed%\n\
         Angle acceleration:           %angleAcceleration%\n\
         Piece:                        %pieceIndex%\n\
         Next bend:                    %nextBendPieceIndex%-%nextBendBendIndex%\n\
@@ -148,6 +149,7 @@ function declarePrivateMethods() {
         output = output.replace("%averageSpeed%", this.averageSpeed);
         output = output.replace("%speedAcceleration%", this.speedAcceleration);
         output = output.replace("%angle%", this.angle);
+        output = output.replace("%angleSpeed%", this.angle);
         output = output.replace("%angleAcceleration%", this.angleAcceleration);
         output = output.replace("%pieceIndex%", this.pieceIndex);
         output = output.replace("%nextBendPieceIndex%", this.nextBendPieceIndex);
