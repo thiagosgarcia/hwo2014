@@ -207,18 +207,24 @@ function declarePrivateMethods() {
     // Descobrir a velocidade de entrada na qual o tempo de desacelerar até a maintenanceSpeed (ticksToSpeed)
     // seja menor que o tempo de bater (ticksToAngle(60));
     this.calculateBendTargetSpeedForLane = function (lane, breakingFactor){
+        // TODO CONTINUE FROM HERE
+        // temos que jogar o calculo de velocidade para voltar até a bend anterior em caso de duas bends coladas.
+        // A menor targetSpeed será a utilizada.
+        //
+
         //CodigoNovo
         const millisecondsPerTick = 50/3;
 
         var laneDistanceFromCenter = this.laneDistanceFromCenter(lane);
         var radiusInLane = this.radius + laneDistanceFromCenter;
 
-        var targetSpeed = ( Math.sqrt( 2 * GRAVITY_ACCELERATION * radiusInLane * 9));
+        // TODO ENCAPSULAR PARA PRIVATE
+        // var targetSpeed = ( Math.sqrt( 2 * GRAVITY_ACCELERATION * radiusInLane * 9));
         return targetSpeed;
 
         /// Quando a velocidade radial = velocidade angular então estamos na iminencia de derrapar
 
-       /*/// Codigo de segurança
+       /// Codigo de segurança
         var lengthToDecrement = this.bendLength(lane)/4;
         var maintenanceSpeed = this.maintenanceSpeed(lane, breakingFactor);
 
@@ -234,7 +240,7 @@ function declarePrivateMethods() {
         }
 
         return targetSpeed;
-*/
+
 /*  Codigo antigo
         const gravity = 9.78 ;
         const millisecondsPerTick = 50/3;
