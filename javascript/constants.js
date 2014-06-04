@@ -1,0 +1,1 @@
+global.GRAVITY_ACCELERATION = 97.8 / 3600;

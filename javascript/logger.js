@@ -112,24 +112,28 @@ Logger.setBreakingFactor = function(breakingFactor) {
 function declarePrivateMethods() {
 
     this.outputTemplate =
-"Track:                         %track%\n\
-Tick:                         %tick%\n\
-Time:                         %timePassed%\n\
-Lap:                          %currentLap%/%totalLaps%\n\
-Target speed:                 %targetSpeed%\n\
-Breaking factor:              %breakingFactor%\n\
-Throttle:                     %throttle%\n\
-Speed:                        %speed%\n\
-Average Speed:                %averageSpeed%\n\
-Speed acceleration:           %speedAcceleration%\n\
-Angle:                        %angle%\n\
-Angle acceleration:           %angleAcceleration%\n\
-Piece:                        %pieceIndex%\n\
-Next bend:                    %nextBendPieceIndex%-%nextBendBendIndex%\n\
-Distance to next bend:        %distanceToNextBend%\n\
-Next lane:                    %nextBendTargetLane%\n\
-\n\
-Logs:\n";
+        "Track:                         %track%\n\
+        Tick:                         %tick%\n\
+        Time:                         %timePassed%\n\
+        Lap:                          %currentLap%/%totalLaps%\n\
+        Target speed:                 %targetSpeed%\n\
+        Breaking factor:              %breakingFactor%\n\
+        Throttle:                     %throttle%\n\
+        Speed:                        %speed%\n\
+        Average Speed:                %averageSpeed%\n\
+        Speed acceleration:           %speedAcceleration%\n\
+        Angle:                        %angle%\n\
+        Angle:                        %angleSpeed%\n\
+        Angle acceleration:           %angleAcceleration%\n\
+        Piece:                        %pieceIndex%\n\
+        Next bend:                    %nextBendPieceIndex%-%nextBendBendIndex%\n\
+        Distance to next bend:        %distanceToNextBend%\n\
+        Next lane:                    %nextBendTargetLane%\n\
+        \n\
+        %speedGauge%\n\
+        %bendGauge%\n\
+        \n\
+        Logs:\n";
 
     this.print = function() {
         output = this.outputTemplate;
@@ -145,6 +149,7 @@ Logs:\n";
         output = output.replace("%averageSpeed%", this.averageSpeed);
         output = output.replace("%speedAcceleration%", this.speedAcceleration);
         output = output.replace("%angle%", this.angle);
+        output = output.replace("%angleSpeed%", this.angle);
         output = output.replace("%angleAcceleration%", this.angleAcceleration);
         output = output.replace("%pieceIndex%", this.pieceIndex);
         output = output.replace("%nextBendPieceIndex%", this.nextBendPieceIndex);
@@ -152,11 +157,73 @@ Logs:\n";
         output = output.replace("%distanceToNextBend%", this.distanceToNextBend);
         output = output.replace("%nextBendTargetLane%", this.nextBendTargetLane);
 
+        output = output.replace("%speedGauge%", this.updateSpeedGauge());
+        output = output.replace("%bendGauge%", this.updateBendGauge());
+
         process.stdout.write("\033[2J"); // clear screen
         process.stdout.write("\033[0;0H"); // send cursor to top
         process.stdout.write(output);
 
+
         this.printLogs();
+    };
+
+    this.updateSpeedGauge = function() {
+        Logger.getInstance();
+        var gauge = "0";
+        var speed = parseFloat(myLogger.speed);
+        var factor = 20 / 119;
+        var i = 0.0;
+        while( i <= 20){
+            i += factor;
+            if( Math.ceil(i + factor) == Math.floor(i + factor * 2) && parseInt(i) == 9){
+                gauge += (speed > 10 ? "|" : ".") + speed.toFixed(2);
+                i+= speed < 10 ? factor * 5 : factor * 6;
+                continue;
+            }
+            if(i < speed)
+                gauge += "|";
+            else
+                gauge += ".";
+        }
+        gauge += Math.floor(i);
+        if(speed > i)
+            gauge += " >> "
+        return gauge;
+    };
+
+    this.updateBendGauge = function() {
+        Logger.getInstance();
+        var gauge = "";
+        var angle = myLogger.angle * -1;
+        var i = -62;
+        while (++i < 62){
+            if(i == -61){
+                gauge += "L";
+                continue;
+            }
+            if(i == 61){
+                gauge += "R";
+                continue;
+            }
+            if(i == 0){
+                gauge += "C";
+                continue;
+            }
+            if(i < 0){
+                if( i < angle)
+                    gauge += ".";
+                else
+                    gauge += "|";
+            }else{
+                if( i > angle)
+                    gauge += ".";
+                else
+                    gauge += "|";
+            }
+
+        }
+        return gauge;
     };
 
     this.printTargetSpeeds = function () {

@@ -11,6 +11,7 @@ function Driver(car) {
 
     // Empyrical result;
     this.breakingFactor = 49.0;
+    Logger.setBreakingFactor(this.breakingFactor);
 
     // Break learning variables
     this.ticksBreakingInStraight = 0;
@@ -182,8 +183,10 @@ function declarePrivateMethods() {
         var centripetSpeed = Math.pow(radianPerTick, 2) * radiusInLane;
 */
 
-        var radiusInLane = piece.radiusInLane(car.nextLane);
-        var maintenanceSpeed = Math.sqrt(radiusInLane / this.breakingFactor * 9.78);
+//        var radiusInLane = piece.radiusInLane(car.nextLane);
+//        var maintenanceSpeed = Math.sqrt(radiusInLane / this.breakingFactor * 9.78);
+
+        var maintenanceSpeed = piece.maintenanceSpeed(car.nextLane, this.breakingFactor);
 
         if(car.currentSpeed <= maintenanceSpeed)
             return false;
