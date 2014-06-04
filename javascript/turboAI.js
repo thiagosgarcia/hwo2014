@@ -19,7 +19,7 @@ TurboAI.prototype.determineTurboUse = function() {
     if(currentPiece.type == "B") {
         //TODO Refactor this! -><-
         return false;
-        var bendLength = currentPiece.bendLength(false, car.lane);
+        var bendLength = currentPiece.bendLength(car.lane);
 
         if(car.distanceInCurrentBend() < (bendLength * 0.75))
             return false;

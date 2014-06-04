@@ -36,6 +36,7 @@ function Logger(serverName) {
     this.nextBendBendIndex = "";
     this.nextBendTargetLane = "";
     this.targetSpeed = "";
+    this.maintenanceSpeed = "";
     this.nextBendDistance = "";
     this.distanceToNextBend = "";
     this.logs = [];
@@ -106,6 +107,11 @@ Logger.setTargetSpeed = function(targetSpeed) {
     myLogger.targetSpeed = targetSpeed;
 };
 
+Logger.setMaintenanceSpeed = function(maintenanceSpeed) {
+    Logger.getInstance();
+    myLogger.maintenanceSpeed = maintenanceSpeed;
+};
+
 Logger.setBreakingFactor = function(breakingFactor) {
     Logger.getInstance();
     myLogger.breakingFactor = breakingFactor;
@@ -118,9 +124,10 @@ function declarePrivateMethods() {
         Tick:                         %tick%\n\
         Time:                         %timePassed%\n\
         Lap:                          %currentLap%/%totalLaps%\n\
-        Target speed:                 %targetSpeed%\n\
         Breaking factor:              %breakingFactor%\n\
         Throttle:                     %throttle%\n\
+        Target speed:                 %targetSpeed%\n\
+        Maintenance speed:            %maintenanceSpeed%\n\
         Speed:                        %speed%\n\
         Average Speed:                %averageSpeed%\n\
         Speed acceleration:           %speedAcceleration%\n\
@@ -145,6 +152,7 @@ function declarePrivateMethods() {
         output = output.replace("%currentLap%", this.currentLap);
         output = output.replace("%totalLaps%", this.totalLaps);
         output = output.replace("%targetSpeed%", this.targetSpeed);
+        output = output.replace("%maintenanceSpeed%", this.maintenanceSpeed);
         output = output.replace("%breakingFactor%", this.breakingFactor);
         output = output.replace("%throttle%", this.throttle);
         output = output.replace("%speed%", this.speed);
