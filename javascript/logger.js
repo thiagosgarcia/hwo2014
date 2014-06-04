@@ -29,6 +29,7 @@ function Logger(serverName) {
     this.averageSpeed = "";
     this.speedAcceleration = "";
     this.angle = "";
+    this.angleSpeed = "";
     this.angleAcceleration = "";
     this.pieceIndex = "";
     this.nextBendPieceIndex = "";
@@ -65,7 +66,8 @@ Logger.refresh = function(car) {
         myLogger.averageSpeed = car.averageSpeed;
         myLogger.speedAcceleration = car.acceleration;
         myLogger.angle = car.angle;
-        myLogger.angleAcceleration = car.angleSpeed;
+        myLogger.angleSpeed = car.angleSpeed;
+        myLogger.angleAcceleration = car.angleAcceleration;
         myLogger.pieceIndex = (!!car.currentPiece) ? (car.currentPiece.index + " (" + car.currentPiece.type + ")") : "";
         myLogger.nextBendPieceIndex = (!!car.bendsAhead[0]) ? car.bendsAhead[0].index : "";
         myLogger.nextBendBendIndex = (!!car.bendsAhead[0]) ? car.bendsAhead[0].bendIndex : "";
@@ -112,7 +114,7 @@ Logger.setBreakingFactor = function(breakingFactor) {
 function declarePrivateMethods() {
 
     this.outputTemplate =
-        "Track:                         %track%\n\
+        "Track:                        %track%\n\
         Tick:                         %tick%\n\
         Time:                         %timePassed%\n\
         Lap:                          %currentLap%/%totalLaps%\n\
@@ -123,7 +125,7 @@ function declarePrivateMethods() {
         Average Speed:                %averageSpeed%\n\
         Speed acceleration:           %speedAcceleration%\n\
         Angle:                        %angle%\n\
-        Angle:                        %angleSpeed%\n\
+        Angle Speed:                  %angleSpeed%\n\
         Angle acceleration:           %angleAcceleration%\n\
         Piece:                        %pieceIndex%\n\
         Next bend:                    %nextBendPieceIndex%-%nextBendBendIndex%\n\
@@ -149,7 +151,7 @@ function declarePrivateMethods() {
         output = output.replace("%averageSpeed%", this.averageSpeed);
         output = output.replace("%speedAcceleration%", this.speedAcceleration);
         output = output.replace("%angle%", this.angle);
-        output = output.replace("%angleSpeed%", this.angle);
+        output = output.replace("%angleSpeed%", this.angleSpeed);
         output = output.replace("%angleAcceleration%", this.angleAcceleration);
         output = output.replace("%pieceIndex%", this.pieceIndex);
         output = output.replace("%nextBendPieceIndex%", this.nextBendPieceIndex);
