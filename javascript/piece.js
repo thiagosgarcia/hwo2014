@@ -23,6 +23,7 @@ function Piece(data, index, track) {
     this.type = this.getPieceType(data);
 
     this.hasSwitch = !!data.switch;
+    this.isInChicane = false;
 }
 
 Piece.prototype.lengthInLane = function(laneFrom, laneTo) {
@@ -198,6 +199,12 @@ function declarePrivateMethods() {
     // Descobrir a velocidade de entrada na qual o tempo de desacelerar até a maintenanceSpeed (ticksToSpeed)
     // seja menor que o tempo de bater (ticksToAngle(60));
     this.calculateBendTargetSpeed = function (lane, breakingFactor, extraLengthToDecrement) {
+
+        var targetSpeed = this.calculatePhysicsBendTargetSpeed(lane);
+
+        if(this.isInChicane)
+            targetSpeed *= 1.15;
+        return targetSpeed;
         // TODO CONTINUE FROM HERE
         // temos que jogar o calculo de velocidade para voltar até a bend anterior em caso de duas bends coladas.
         // A menor targetSpeed será a utilizada.

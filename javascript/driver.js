@@ -19,7 +19,6 @@ function Driver(car) {
     this.speedAccelerationFactor = 49;
 
     this.angleToCrash = 60.0;
-    this.angleToCrashDefined = false;
 
     this.switchAI = new SwitchAI(this);
     this.turboAI = new TurboAI(this);
@@ -28,12 +27,12 @@ function Driver(car) {
 }
 
 Driver.prototype.setCrashAngle = function(angle){
-    if(!this.angleToCrashDefined){
-        this.angleToCrashDefined = true;
-        this.angleToCrash = Math.abs(angle);
+    angle = Math.abs(angle);
+    if(this.angleToCrash > angle){
+        this.angleToCrash = angle;
         Logger.setCrashAngle(this.angleToCrash);
     }
-}
+};
 
 // ***** Throttle intelligence ***** //
 
@@ -56,6 +55,7 @@ Driver.prototype.driveForStraight = function() {
         return 1.0;
     }
 
+    this.ticksBreakingInStraight++;
     this.ticksBreakingInStraight++;
     if(this.isTimeToCalculateTheBreakingFactor())
         this.calculateBreakingFactor();
@@ -199,6 +199,8 @@ function declarePrivateMethods() {
             + " | angleAccFactor: " + car.angleAccelerationFactor
             + " | " + maintenanceSpeed );
 
+        if(piece.isInChicane)
+            ticksToMaintenanceSpeed *= 1.15;
         return ticksToCrash < ticksToMaintenanceSpeed;
     };
 

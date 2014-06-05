@@ -85,6 +85,7 @@ function declarePrivateMethods() {
         this.pieces[0].previousPiece = this.pieces[this.pieces.length - 1];
 
         this.calculateBendIndexes();
+        this.setChicanes(this.pieces);
     };
 
     this.buildTrackPiece = function(piecesInfo, index) {
@@ -153,6 +154,58 @@ function declarePrivateMethods() {
 
                 break;
             }
+        }
+    };
+
+    this.setChicanes = function(pieces){
+        var i = -1;
+        var angleCounter = 0;
+        var firstIndex = null;
+        var lastIndex = null;
+        var smallStraights = 0;
+        var pieceToVerify = null;
+        while (++i < pieces.length - 1){
+            var lastPiece = pieceToVerify;
+            pieceToVerify = pieces[i];
+            var nextPiece = pieces[i+1];
+
+            if(pieceToVerify.length > 100)
+                continue;
+
+            if(pieceToVerify.type == "B"){
+                angleCounter += pieceToVerify.angle;
+                firstIndex = firstIndex == null ? i : firstIndex;
+                lastIndex = i;
+                smallStraights = 0;
+            }
+
+            if(!!lastPiece && lastPiece.type == "B" && nextPiece.type == "B"
+                && lastPiece.angle + nextPiece.angle == 0 && pieceToVerify.length <= 50){
+                continue;
+            }
+
+            if(firstIndex != null && lastIndex != null && angleCounter == 0 && smallStraights == 0){
+                this.setPiecesAsChicanes(pieces, firstIndex, lastIndex);
+            }
+            if(pieceToVerify.type == "S") {
+                firstIndex = null;
+                lastIndex = null;
+                angleCounter = 0;
+                continue;
+            }
+
+            if(pieceToVerify.radius != nextPiece.radius && pieceToVerify.type == "B" && nextPiece.type == "B"  ){
+                angleCounter = 0;
+                firstIndex = null;
+                lastIndex = null;
+                continue;
+            }
+        }
+    };
+
+    this.setPiecesAsChicanes = function(pieces, initialIndex, finalIndex){
+        for(var i = initialIndex; i < finalIndex; i++){
+            pieces[i].isInChicane = true;
         }
     };
 }

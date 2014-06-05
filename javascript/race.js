@@ -38,7 +38,7 @@ Race.prototype.run = function(data, gameTick) {
 
 Race.prototype.setCrashAngle = function () {
     ourCar.setCrashAngle();
-}
+};
 
 Race.prototype.rechargeTurbo = function(data) {
     ourCar.rechargeTurbo(data);

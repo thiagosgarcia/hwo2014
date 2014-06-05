@@ -20,6 +20,7 @@ function Logger(serverName) {
     this.myLogger = this;
 
     this.track = "";
+    this.server = "";
     this.tick = 0;
     this.timePassed = 0;
     this.throttle = "";
@@ -57,6 +58,11 @@ Logger.getInstance = function() {
 Logger.log = function () {
     Logger.getInstance();
     myLogger.logs.push(arguments);
+};
+
+Logger.setServer = function(server){
+    Logger.getInstance();
+    myLogger.server = server;
 };
 
 Logger.refresh = function(car) {
@@ -126,7 +132,7 @@ Logger.setBreakingFactor = function(breakingFactor) {
 function declarePrivateMethods() {
 
     this.outputTemplate =
-"       Track:                        %track%\n\
+"       Track:                        %track% @ %server%\n\
         Tick:                         %tick%\n\
         Time:                         %timePassed%\n\
         Lap:                          %currentLap%/%totalLaps%\n\
@@ -154,6 +160,7 @@ function declarePrivateMethods() {
     this.print = function() {
         output = this.outputTemplate;
         output = output.replace("%track%", this.track);
+        output = output.replace("%server%", this.server);
         output = output.replace("%tick%", this.tick);
         output = output.replace("%timePassed%", this.timePassed + "s");
         output = output.replace("%currentLap%", this.currentLap);
@@ -206,7 +213,7 @@ function declarePrivateMethods() {
         }
         gauge += Math.floor(i);
         if(speed > i)
-            gauge += " >> "
+            gauge += " >> ";
         return gauge;
     };
 
@@ -221,11 +228,11 @@ function declarePrivateMethods() {
                 gauge += "L";
                 continue;
             }
-            if(i == crashAngle + 1){
+            if(i >= crashAngle + 1){
                 gauge += "R";
-                continue;
+                break;
             }
-            if(i == -2){
+            if( (Math.ceil(i) == -2 && Math.floor(i + 1) == -2) || i == -2){
                 gauge += crashAngle.toFixed(1);
                 i+= 4;
                 continue;
