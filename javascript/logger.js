@@ -29,12 +29,14 @@ function Logger(serverName) {
     this.averageSpeed = "";
     this.speedAcceleration = "";
     this.angle = "";
+    this.angleSpeed = "";
     this.angleAcceleration = "";
     this.pieceIndex = "";
     this.nextBendPieceIndex = "";
     this.nextBendBendIndex = "";
     this.nextBendTargetLane = "";
     this.targetSpeed = "";
+    this.maintenanceSpeed = "";
     this.nextBendDistance = "";
     this.distanceToNextBend = "";
     this.logs = [];
@@ -65,7 +67,8 @@ Logger.refresh = function(car) {
         myLogger.averageSpeed = car.averageSpeed;
         myLogger.speedAcceleration = car.acceleration;
         myLogger.angle = car.angle;
-        myLogger.angleAcceleration = car.angleSpeed;
+        myLogger.angleSpeed = car.angleSpeed;
+        myLogger.angleAcceleration = car.angleAcceleration;
         myLogger.pieceIndex = (!!car.currentPiece) ? (car.currentPiece.index + " (" + car.currentPiece.type + ")") : "";
         myLogger.nextBendPieceIndex = (!!car.bendsAhead[0]) ? car.bendsAhead[0].index : "";
         myLogger.nextBendBendIndex = (!!car.bendsAhead[0]) ? car.bendsAhead[0].bendIndex : "";
@@ -104,6 +107,11 @@ Logger.setTargetSpeed = function(targetSpeed) {
     myLogger.targetSpeed = targetSpeed;
 };
 
+Logger.setMaintenanceSpeed = function(maintenanceSpeed) {
+    Logger.getInstance();
+    myLogger.maintenanceSpeed = maintenanceSpeed;
+};
+
 Logger.setBreakingFactor = function(breakingFactor) {
     Logger.getInstance();
     myLogger.breakingFactor = breakingFactor;
@@ -112,18 +120,19 @@ Logger.setBreakingFactor = function(breakingFactor) {
 function declarePrivateMethods() {
 
     this.outputTemplate =
-        "Track:                         %track%\n\
+        "Track:                        %track%\n\
         Tick:                         %tick%\n\
         Time:                         %timePassed%\n\
         Lap:                          %currentLap%/%totalLaps%\n\
-        Target speed:                 %targetSpeed%\n\
         Breaking factor:              %breakingFactor%\n\
         Throttle:                     %throttle%\n\
+        Target speed:                 %targetSpeed%\n\
+        Maintenance speed:            %maintenanceSpeed%\n\
         Speed:                        %speed%\n\
         Average Speed:                %averageSpeed%\n\
         Speed acceleration:           %speedAcceleration%\n\
         Angle:                        %angle%\n\
-        Angle:                        %angleSpeed%\n\
+        Angle Speed:                  %angleSpeed%\n\
         Angle acceleration:           %angleAcceleration%\n\
         Piece:                        %pieceIndex%\n\
         Next bend:                    %nextBendPieceIndex%-%nextBendBendIndex%\n\
@@ -143,13 +152,14 @@ function declarePrivateMethods() {
         output = output.replace("%currentLap%", this.currentLap);
         output = output.replace("%totalLaps%", this.totalLaps);
         output = output.replace("%targetSpeed%", this.targetSpeed);
+        output = output.replace("%maintenanceSpeed%", this.maintenanceSpeed);
         output = output.replace("%breakingFactor%", this.breakingFactor);
         output = output.replace("%throttle%", this.throttle);
         output = output.replace("%speed%", this.speed);
         output = output.replace("%averageSpeed%", this.averageSpeed);
         output = output.replace("%speedAcceleration%", this.speedAcceleration);
         output = output.replace("%angle%", this.angle);
-        output = output.replace("%angleSpeed%", this.angle);
+        output = output.replace("%angleSpeed%", this.angleSpeed);
         output = output.replace("%angleAcceleration%", this.angleAcceleration);
         output = output.replace("%pieceIndex%", this.pieceIndex);
         output = output.replace("%nextBendPieceIndex%", this.nextBendPieceIndex);

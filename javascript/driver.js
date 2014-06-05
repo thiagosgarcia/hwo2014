@@ -1,5 +1,7 @@
-var Logger = require("./logger.js");
 require('./array.median.js');
+require('./constants.js');
+
+var Logger = require("./logger.js");
 var SwitchAI = require('./switchAI.js');
 var TurboAI = require('./turboAI.js');
 
@@ -55,7 +57,7 @@ Driver.prototype.driveForStraight = function() {
 Driver.prototype.driveForBend = function() {
     var car = this.car;
     this.ticksBreakingInStraight = 0;
-    if(car.angleSpeed < 0.0)
+    if(car.angleSpeed <= 0.0)
         return 1.0;
 
     if(this.shouldBreakInBend() || this.shouldBreakForTargetSpeed())
@@ -172,21 +174,8 @@ function declarePrivateMethods() {
 
         var car = this.car;
         var piece = this.car.currentPiece;
-/*
-        var pieceLength = piece.lengthInLane(car.lane);
-        var inPiecePosition = car.inPieceDistance;
-        var angleInRadians = car.angleInRadians;
-        var inPieceRadianPosition = angleInRadians * inPiecePosition / pieceLength;
-        var inPieceLastRadianPosition = angleInRadians * car.inPieceDistance - car.acceleration / pieceLength;
-
-        var radianPerTick = inPieceRadianPosition - inPieceLastRadianPosition;
-        var centripetSpeed = Math.pow(radianPerTick, 2) * radiusInLane;
-*/
-
-//        var radiusInLane = piece.radiusInLane(car.nextLane);
-//        var maintenanceSpeed = Math.sqrt(radiusInLane / this.breakingFactor * 9.78);
-
         var maintenanceSpeed = piece.maintenanceSpeed(car.nextLane, this.breakingFactor);
+        Logger.setMaintenanceSpeed(maintenanceSpeed);
 
         if(car.currentSpeed <= maintenanceSpeed)
             return false;
