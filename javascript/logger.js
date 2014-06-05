@@ -29,6 +29,7 @@ function Logger(serverName) {
     this.averageSpeed = "";
     this.speedAcceleration = "";
     this.angle = "";
+    this.crashAngle = "60";
     this.angleSpeed = "";
     this.angleAcceleration = "";
     this.pieceIndex = "";
@@ -112,6 +113,11 @@ Logger.setMaintenanceSpeed = function(maintenanceSpeed) {
     myLogger.maintenanceSpeed = maintenanceSpeed;
 };
 
+Logger.setCrashAngle = function (angle) {
+    Logger.getInstance();
+    myLogger.crashAngle = angle;
+}
+
 Logger.setBreakingFactor = function(breakingFactor) {
     Logger.getInstance();
     myLogger.breakingFactor = breakingFactor;
@@ -120,7 +126,7 @@ Logger.setBreakingFactor = function(breakingFactor) {
 function declarePrivateMethods() {
 
     this.outputTemplate =
-        "Track:                        %track%\n\
+"       Track:                        %track%\n\
         Tick:                         %tick%\n\
         Time:                         %timePassed%\n\
         Lap:                          %currentLap%/%totalLaps%\n\
@@ -134,6 +140,7 @@ function declarePrivateMethods() {
         Angle:                        %angle%\n\
         Angle Speed:                  %angleSpeed%\n\
         Angle acceleration:           %angleAcceleration%\n\
+        CrashAngle:                   %crashAngle%\n\
         Piece:                        %pieceIndex%\n\
         Next bend:                    %nextBendPieceIndex%-%nextBendBendIndex%\n\
         Distance to next bend:        %distanceToNextBend%\n\
@@ -161,6 +168,7 @@ function declarePrivateMethods() {
         output = output.replace("%angle%", this.angle);
         output = output.replace("%angleSpeed%", this.angleSpeed);
         output = output.replace("%angleAcceleration%", this.angleAcceleration);
+        output = output.replace("%crashAngle%", this.crashAngle);
         output = output.replace("%pieceIndex%", this.pieceIndex);
         output = output.replace("%nextBendPieceIndex%", this.nextBendPieceIndex);
         output = output.replace("%nextBendBendIndex%", this.nextBendBendIndex);
@@ -182,7 +190,7 @@ function declarePrivateMethods() {
         Logger.getInstance();
         var gauge = "0";
         var speed = parseFloat(myLogger.speed);
-        var factor = 20 / 119;
+        var factor = 20 / Math.abs(parseFloat(myLogger.crashAngle) * 2 - 1) ;
         var i = 0.0;
         while( i <= 20){
             i += factor;
@@ -205,19 +213,21 @@ function declarePrivateMethods() {
     this.updateBendGauge = function() {
         Logger.getInstance();
         var gauge = "";
+        var crashAngle = Math.abs(parseFloat(myLogger.crashAngle));
         var angle = myLogger.angle * -1;
-        var i = -62;
-        while (++i < 62){
-            if(i == -61){
+        var i = (crashAngle + 2) * -1;
+        while (++i < crashAngle + 2){
+            if(i == (crashAngle + 1) * -1){
                 gauge += "L";
                 continue;
             }
-            if(i == 61){
+            if(i == crashAngle + 1){
                 gauge += "R";
                 continue;
             }
-            if(i == 0){
-                gauge += "C";
+            if(i == -2){
+                gauge += crashAngle.toFixed(1);
+                i+= 4;
                 continue;
             }
             if(i < 0){

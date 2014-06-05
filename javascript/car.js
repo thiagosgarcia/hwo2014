@@ -96,6 +96,10 @@ Car.prototype.updateCarPosition = function(positionInfoArray) {
     this.lastSpeed = this.currentSpeed;
 };
 
+Car.prototype.setCrashAngle = function () {
+    this.driver.setCrashAngle(this.angle);
+}
+
 Car.prototype.rechargeTurbo = function(turboInfo) {
     this.turboDurationTicks = turboInfo.turboDurationTicks;
     this.turboFactor = turboInfo.turboFactor;

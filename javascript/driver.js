@@ -5,8 +5,6 @@ var Logger = require("./logger.js");
 var SwitchAI = require('./switchAI.js');
 var TurboAI = require('./turboAI.js');
 
-const ANGLE_TO_CRASH = 60.0;
-
 function Driver(car) {
     this.car = car;
     this.checkSwitch = true;
@@ -20,10 +18,21 @@ function Driver(car) {
     this.breakingFactors = [];
     this.speedAccelerationFactor = 49;
 
+    this.angleToCrash = 60.0;
+    this.angleToCrashDefined = false;
+
     this.switchAI = new SwitchAI(this);
     this.turboAI = new TurboAI(this);
 
     declarePrivateMethods.call(this);
+}
+
+Driver.prototype.setCrashAngle = function(angle){
+    if(!this.angleToCrashDefined){
+        this.angleToCrashDefined = true;
+        this.angleToCrash = Math.abs(angle);
+        Logger.setCrashAngle(this.angleToCrash);
+    }
 }
 
 // ***** Throttle intelligence ***** //
@@ -180,7 +189,7 @@ function declarePrivateMethods() {
         if(car.currentSpeed <= maintenanceSpeed)
             return false;
 
-        var ticksToCrash = this.ticksToCarAngle(ANGLE_TO_CRASH);
+        var ticksToCrash = this.ticksToCarAngle(this.angleToCrash);
         var ticksToMaintenanceSpeed = this.ticksToBreakUntilTargetSpeed(maintenanceSpeed);
 
         Logger.log(" ticksToTargAngle: " + ticksToCrash
