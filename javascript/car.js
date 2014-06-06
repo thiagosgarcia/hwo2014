@@ -55,6 +55,8 @@ function Car(data, track) {
     this.turboDurationTicks = 0;
     this.turboFactor = 1.0;
 
+    this.bendMaxAngle = [];
+
     this.driver = new Driver(this);
 
     declarePrivateMethods.call(this);
@@ -90,15 +92,37 @@ Car.prototype.updateCarPosition = function(positionInfoArray) {
     this.updateCheckSwitchFlag();
     this.getBendsAhead();
     this.getNextSwitchPiece();
+    this.calculateBendMaxSpeed.call(this);
 
     this.lastPiece = this.currentPiece;
     this.lastInPieceDistance = this.inPieceDistance;
     this.lastSpeed = this.currentSpeed;
 };
 
+Car.prototype.calculateBendMaxSpeed = function(){
+    if(!this.currentPiece || this.currentPiece.bendIndex == null)
+        return;
+    if(this.bendMaxAngle[this.currentPiece.bendIndex] == undefined)
+        this.bendMaxAngle[this.currentPiece.bendIndex] = 0;
+
+    if(Math.abs(this.angle) > this.bendMaxAngle[this.currentPiece.bendIndex] ){
+        this.bendMaxAngle[this.currentPiece.bendIndex] = Math.abs(this.angle);
+        console.log(" maxAngle " + Math.abs(this.angle));
+    }
+
+    if(this.currentPiece.bendIndex != this.currentPiece.previousPiece.bendIndex){
+        var pieceToVerify = this.currentPiece.nextPiece;
+        while(pieceToVerify.index != this.currentPiece.index){
+            if(pieceToVerify.bendIndex == this.currentPiece.bendIndex)
+                pieceToVerify.bendMaxAngle = this.bendMaxAngle[pieceToVerify.bendIndex];
+            pieceToVerify = pieceToVerify.nextPiece;
+        }
+    }
+};
+
 Car.prototype.setCrashAngle = function () {
     this.driver.setCrashAngle(this.angle);
-}
+};
 
 Car.prototype.rechargeTurbo = function(turboInfo) {
     this.turboDurationTicks = turboInfo.turboDurationTicks;

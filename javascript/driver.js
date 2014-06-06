@@ -32,6 +32,24 @@ Driver.prototype.setCrashAngle = function(angle){
         this.angleToCrash = angle;
         Logger.setCrashAngle(this.angleToCrash);
     }
+    this.incrementCrashCounter.call(this);
+};
+
+Driver.prototype.incrementCrashCounter = function(){
+    var car = this.car;
+    var crashPiece = car.currentPiece;
+    if(car.currentPiece.type == "S"){
+        if(car.currentPiece.previousPiece == "S")
+            return;
+        crashPiece = car.currentPiece.previousPiece;
+    }
+    crashPiece.timesCrashedInBends ++;
+    var pieceToVerify = crashPiece.nextPiece;
+    while (pieceToVerify.index != crashPiece.index){
+        if(crashPiece.bendIndex == pieceToVerify.bendIndex)
+            pieceToVerify.timesCrashedInBends ++;
+        pieceToVerify = pieceToVerify.nextPiece;
+    }
 };
 
 // ***** Throttle intelligence ***** //
@@ -200,7 +218,7 @@ function declarePrivateMethods() {
             + " | " + maintenanceSpeed );
 
         if(piece.isInChicane)
-            ticksToMaintenanceSpeed *= 1.15;
+            ticksToMaintenanceSpeed *= 1.09;
         return ticksToCrash < ticksToMaintenanceSpeed;
     };
 

@@ -24,6 +24,10 @@ function Piece(data, index, track) {
 
     this.hasSwitch = !!data.switch;
     this.isInChicane = false;
+
+    this.timesCrashedInBends = 0;
+    this.bendMaxAngle = 0;
+    this.angleAdjustFactor = 0;
 }
 
 Piece.prototype.lengthInLane = function(laneFrom, laneTo) {
@@ -60,13 +64,13 @@ Piece.prototype.distanceToNextSwitch = function(laneFrom, laneTo) {
     return distance;
 };
 
-Piece.prototype.targetSpeed = function (lane, breakingFactor) {
+Piece.prototype.targetSpeed = function (lane, breakingFactor, timesCrashedInBend) {
     if(!lane)
         return Infinity;
 
-    if(!!this.targetSpeeds[lane.index] &&
+ /*   if(!!this.targetSpeeds[lane.index] &&
         !this.breakingFactorHasChanged(breakingFactor))
-        return this.targetSpeeds[lane.index];
+        return this.targetSpeeds[lane.index];*/
 
     var lanes = this.track.lanes;
     for( var i = 0; i < lanes.length; i++ ){
@@ -203,7 +207,7 @@ function declarePrivateMethods() {
         var targetSpeed = this.calculatePhysicsBendTargetSpeed(lane);
 
         if(this.isInChicane)
-            targetSpeed *= 1.15;
+            targetSpeed *= 1.09;
         return targetSpeed;
         // TODO CONTINUE FROM HERE
         // temos que jogar o calculo de velocidade para voltar até a bend anterior em caso de duas bends coladas.
@@ -257,6 +261,23 @@ function declarePrivateMethods() {
         return ( Math.sqrt( 2 * GRAVITY_ACCELERATION * radiusInLane * 9));
     };
 
+    /* teste
+     this.calculatePhysicsBendTargetSpeed = function(lane) {
+     var laneDistanceFromCenter = this.laneDistanceFromCenter(lane);
+     var radiusInLane = this.radius + laneDistanceFromCenter;
+     var maxAngle = !this.bendMaxAngle ? 30 : this.bendMaxAngle
+
+     var angleDifferenceFactor = 4 * (( (60 - maxAngle) / 60 )) -1 ;
+     var physicsFactor = 8 + Math.abs(angleDifferenceFactor);
+
+     var crashFactor = physicsFactor * (this.timesCrashedInBends / 100);
+
+     physicsFactor = physicsFactor - crashFactor;
+
+     return ( Math.sqrt( 2 * GRAVITY_ACCELERATION * radiusInLane * physicsFactor));
+     //return ( Math.sqrt( 2 * GRAVITY_ACCELERATION * radiusInLane * 9));
+     };
+     */
     this.calculateMaintenanceSpeedForLane = function (lane) {
         var radiusInLane = this.radiusInLane(lane);
         var maintenanceSpeed = Math.sqrt(radiusInLane / this.lastBreakingFactor * 9.78);

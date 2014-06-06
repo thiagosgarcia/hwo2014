@@ -41,6 +41,7 @@ function Logger(serverName) {
     this.maintenanceSpeed = "";
     this.nextBendDistance = "";
     this.distanceToNextBend = "";
+    this.timeDifference = 0;
     this.logs = [];
 
     this.counter = 0;
@@ -109,6 +110,11 @@ Logger.setThrottle = function(throttle) {
     myLogger.throttle = throttle;
 };
 
+Logger.setTimeDifference = function(diff) {
+    Logger.getInstance();
+    myLogger.timeDifference = diff;
+};
+
 Logger.setTargetSpeed = function(targetSpeed) {
     Logger.getInstance();
     myLogger.targetSpeed = targetSpeed;
@@ -133,7 +139,7 @@ function declarePrivateMethods() {
 
     this.outputTemplate =
 "       Track:                        %track% @ %server%\n\
-        Tick:                         %tick%\n\
+        Tick:                         %tick% in %timeDiff%\n\
         Time:                         %timePassed%\n\
         Lap:                          %currentLap%/%totalLaps%\n\
         Breaking factor:              %breakingFactor%\n\
@@ -152,6 +158,7 @@ function declarePrivateMethods() {
         Distance to next bend:        %distanceToNextBend%\n\
         Next lane:                    %nextBendTargetLane%\n\
         \n\
+        %accelerationGauge%\n\
         %speedGauge%\n\
         %bendGauge%\n\
         \n\
@@ -162,6 +169,7 @@ function declarePrivateMethods() {
         output = output.replace("%track%", this.track);
         output = output.replace("%server%", this.server);
         output = output.replace("%tick%", this.tick);
+        output = output.replace("%timeDiff%", this.timeDifference);
         output = output.replace("%timePassed%", this.timePassed + "s");
         output = output.replace("%currentLap%", this.currentLap);
         output = output.replace("%totalLaps%", this.totalLaps);
@@ -182,6 +190,7 @@ function declarePrivateMethods() {
         output = output.replace("%distanceToNextBend%", this.distanceToNextBend);
         output = output.replace("%nextBendTargetLane%", this.nextBendTargetLane);
 
+        output = output.replace("%accelerationGauge%", this.updateGauge(this.speedAcceleration));
         output = output.replace("%speedGauge%", this.updateSpeedGauge());
         output = output.replace("%bendGauge%", this.updateBendGauge());
 
@@ -191,6 +200,33 @@ function declarePrivateMethods() {
 
 
         this.printLogs();
+    };
+
+    this.updateGauge = function(value){
+        Logger.getInstance();
+        var val = parseFloat(value);
+        var gauge = "";
+        var factor = 0.01
+        var i = -0.6 - factor;
+        while(i <= 0.6){
+            i += factor;
+            if( i == 0.0){
+                gauge += "0";
+                continue;
+            }
+            if(i < 0){
+                if( i < val)
+                    gauge += " ";
+                else
+                    gauge += "<";
+            }else{
+                if( i > val)
+                    gauge += " ";
+                else
+                    gauge += ">";
+            }
+        }
+        return gauge;
     };
 
     this.updateSpeedGauge = function() {

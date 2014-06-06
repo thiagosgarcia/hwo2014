@@ -26,6 +26,7 @@ Race.prototype.createCar = function(data) {
 };
 
 Race.prototype.run = function(data, gameTick) {
+    var initialTime = new Date();
     ourCar.updateCarPosition(data);
     var message = {
         type: null,
@@ -33,6 +34,7 @@ Race.prototype.run = function(data, gameTick) {
     };
 
     message = this.decideRaceAction(gameTick);
+    Logger.setTimeDifference(new Date().getMilliseconds() - initialTime.getMilliseconds());
     return message;
 };
 
