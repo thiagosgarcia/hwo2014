@@ -83,6 +83,7 @@ Logger.refresh = function(car) {
         myLogger.distanceToNextBend = (!!car.currentPiece) ? car.distanceToBend() : "";
         myLogger.nextBendTargetLane = (!!car.nextLane) ? car.nextLane.index : "";
         myLogger.targetSpeeds = (!!car.bendsAhead[0] && !!car.bendsAhead[0].targetSpeeds) ? car.bendsAhead[0].targetSpeeds : "";
+        myLogger.crashAngle = (!!car.currentPiece) ? car.currentPiece.angleToCrash : myLogger.angleToCrash;
     }
 
     myLogger.print();
@@ -124,11 +125,6 @@ Logger.setMaintenanceSpeed = function(maintenanceSpeed) {
     Logger.getInstance();
     myLogger.maintenanceSpeed = maintenanceSpeed;
 };
-
-Logger.setCrashAngle = function (angle) {
-    Logger.getInstance();
-    myLogger.crashAngle = angle;
-}
 
 Logger.setBreakingFactor = function(breakingFactor) {
     Logger.getInstance();

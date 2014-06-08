@@ -180,7 +180,7 @@ function declarePrivateMethods() {
             }
 
             if(!!lastPiece && lastPiece.type == "B" && nextPiece.type == "B"
-                && lastPiece.angle + nextPiece.angle == 0 && pieceToVerify.length <= 50){
+                && lastPiece.angle + nextPiece.angle == 0 && pieceToVerify.length <= 30){
                 continue;
             }
 

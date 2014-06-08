@@ -92,39 +92,42 @@ Car.prototype.updateCarPosition = function(positionInfoArray) {
     this.updateCheckSwitchFlag();
     this.getBendsAhead();
     this.getNextSwitchPiece();
-    this.calculateBendMaxSpeed.call(this);
+
+    if(!!this.currentPiece && this.currentPiece.bendIndex != null)
+        this.updateCurrentBendMaxAngle();
+
+    if(!!this.lastPiece && this.lastPiece.bendIndex != null && this.currentPiece.bendIndex != this.lastPiece.bendIndex)
+        this.setLastBendMaxAngle();
 
     this.lastPiece = this.currentPiece;
     this.lastInPieceDistance = this.inPieceDistance;
     this.lastSpeed = this.currentSpeed;
 };
 
-Car.prototype.calculateBendMaxSpeed = function(){
-
-
-
-    if(!this.currentPiece || this.currentPiece.bendIndex == null)
-        return;
+Car.prototype.updateCurrentBendMaxAngle = function() {
     if(this.bendMaxAngle[this.currentPiece.bendIndex] == undefined)
-        this.bendMaxAngle[this.currentPiece.bendIndex] = 0;
+        this.bendMaxAngle[this.currentPiece.bendIndex] = 0.0;
 
-    if(Math.abs(this.angle) > this.bendMaxAngle[this.currentPiece.bendIndex] ){
+    var currentBendMaxAngle = this.bendMaxAngle[this.currentPiece.bendIndex];
+    if(Math.abs(this.angle) > currentBendMaxAngle ) {
         this.bendMaxAngle[this.currentPiece.bendIndex] = Math.abs(this.angle);
         console.log(" maxAngle " + Math.abs(this.angle));
     }
+};
 
-    if(this.currentPiece.bendIndex != this.currentPiece.previousPiece.bendIndex){
-        var pieceToVerify = this.currentPiece.nextPiece;
-        while(pieceToVerify.index != this.currentPiece.index){
-            if(pieceToVerify.bendIndex == this.currentPiece.bendIndex)
-                pieceToVerify.bendMaxAngle = this.bendMaxAngle[pieceToVerify.bendIndex];
-            pieceToVerify = pieceToVerify.nextPiece;
-        }
+Car.prototype.setLastBendMaxAngle = function() {
+    var currentBendMaxAngle = this.bendMaxAngle[this.lastPiece.bendIndex];
+    var piecesInBend = this.lastPiece.piecesInBend();
+    for(var i = 0; i < piecesInBend.length; i++) {
+        var pieceInBend = piecesInBend[i];
+        var lastBendMaxAngle = pieceInBend.bendMaxAngle;
+        pieceInBend.bendMaxAngle = currentBendMaxAngle;
+        pieceInBend.lastBendMaxAngle = lastBendMaxAngle;
     }
 };
 
 Car.prototype.setCrashAngle = function () {
-    this.driver.setCrashAngle(this.angle);
+    this.currentPiece.setCrashAngle(this.angle);
 };
 
 Car.prototype.rechargeTurbo = function(turboInfo) {

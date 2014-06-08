@@ -1,6 +1,8 @@
 require("./constants.js");
 var Logger = require("./logger.js");
 
+var MAX_ANGLE = 60.0;
+
 function Piece(data, index, track) {
     this.index = index;
     this.track = track;
@@ -15,7 +17,7 @@ function Piece(data, index, track) {
 
     this.targetSpeeds = [];
     this.maintenanceSpeeds = [];
-    this.lastBreakingFactor = 49;
+    this.lastBreakingFactor = 49.0;
 
     declarePrivateMethods.call(this);
 
@@ -25,10 +27,47 @@ function Piece(data, index, track) {
     this.hasSwitch = !!data.switch;
     this.isInChicane = false;
 
-    this.timesCrashedInBends = 0;
-    this.bendMaxAngle = 0;
-    this.angleAdjustFactor = 0;
+    this.timesCrashedInBend = 0;
+    this.angleToCrash = 60.0;
+    this.naivePhysicsFactor = 8.0;
+    this.calculatedPhysicsFactor = this.naivePhysicsFactor;
+
+    this.lastBendMaxAngle = 0.0;
+    this.bendMaxAngle = 0.0;
+    this.angleAdjustFactor = 0.0;
+
 }
+
+Piece.prototype.setCrashAngle = function(angle){
+    var crashPiece = this;
+    if(this.type == "S"){
+        if(this.previousPiece == "S")
+            return;
+        crashPiece = this.previousPiece;
+    }
+
+    angle = Math.abs(angle);
+    var crashAngleDifference = MAX_ANGLE - angle;
+    if( crashAngleDifference < 0.0 ){
+        crashAngleDifference = 0.0;
+    }
+
+    crashAngleDifference *= crashPiece.timesCrashedInBend + 2.0;
+
+    if( crashAngleDifference > 6.0)
+        crashAngleDifference = 6.0;
+    crashPiece.angleToCrash -= crashAngleDifference;
+    crashPiece.incrementCrashCounter(crashPiece.angleToCrash);
+};
+
+Piece.prototype.incrementCrashCounter = function(maxAngle) {
+    var piecesInCrashBend = this.piecesInBend();
+    for(var i = 0; i < piecesInCrashBend.length; i++) {
+        var crashPiece = piecesInCrashBend[i];
+        crashPiece.timesCrashedInBend++;
+        crashPiece.angleToCrash = maxAngle;
+    }
+};
 
 Piece.prototype.lengthInLane = function(laneFrom, laneTo) {
     if(!!laneTo && (laneTo.index !== laneFrom.index)) {
@@ -51,10 +90,23 @@ Piece.prototype.radiusInLane = function(lane) {
 
 Piece.prototype.firstPieceInBend = function () {
     var firstPieceInBend = this;
-    while(firstPieceInBend.previousPiece.bendIndex == this.index) {
+    while(firstPieceInBend.previousPiece.bendIndex == this.bendIndex) {
         firstPieceInBend = firstPieceInBend.previousPiece;
     }
     return firstPieceInBend;
+};
+
+Piece.prototype.piecesInBend = function() {
+    var pieceToVerify = this.firstPieceInBend();
+    var piecesInBend = [];
+
+    while(pieceToVerify.bendIndex == this.bendIndex) {
+        piecesInBend.push(pieceToVerify);
+
+        pieceToVerify = pieceToVerify.nextPiece;
+    }
+
+    return piecesInBend;
 };
 
 Piece.prototype.distanceToNextSwitch = function(laneFrom, laneTo) {
@@ -183,12 +235,11 @@ function declarePrivateMethods() {
     this.targetSpeedForLane = function(lane, breakingFactor) {
         var thisBendTargetSpeed = this.calculateBendTargetSpeed(lane, breakingFactor);
 
-        var extraLengthToDecrement = this.bendLength(lane);
         var pieceToVerify = this.bendExitPiece();
         if(pieceToVerify.type == "S")
             return thisBendTargetSpeed;
 
-        var pieceToVerifyTargetSpeed = pieceToVerify.calculateBendTargetSpeed(lane, breakingFactor, extraLengthToDecrement);
+        var pieceToVerifyTargetSpeed = pieceToVerify.calculateBendTargetSpeed(lane);
         var bendInSameDirection = (this.angle > 0 && pieceToVerify.angle > 0) ||
                                   (this.angle < 0 && pieceToVerify.angle < 0);
 
@@ -197,8 +248,7 @@ function declarePrivateMethods() {
 
             thisBendTargetSpeed = pieceToVerifyTargetSpeed;
 
-            extraLengthToDecrement += pieceToVerify.bendLength(lane);
-            pieceToVerifyTargetSpeed = pieceToVerify.calculateBendTargetSpeed(lane, breakingFactor, extraLengthToDecrement);
+            pieceToVerifyTargetSpeed = pieceToVerify.calculateBendTargetSpeed(lane);
             pieceToVerify = pieceToVerify.bendExitPiece();
             bendInSameDirection = (this.angle > 0 && pieceToVerify.angle > 0) ||
                                   (this.angle < 0 && pieceToVerify.angle < 0);
@@ -207,86 +257,53 @@ function declarePrivateMethods() {
         return thisBendTargetSpeed;
     };
 
-    // TODO: conta doida. Refazer da seguinte forma:
-    // Descobrir a velocidade de entrada na qual o tempo de desacelerar até a maintenanceSpeed (ticksToSpeed)
-    // seja menor que o tempo de bater (ticksToAngle(60));
-    this.calculateBendTargetSpeed = function (lane, breakingFactor, extraLengthToDecrement) {
-
+    this.calculateBendTargetSpeed = function (lane) {
         var targetSpeed = this.calculatePhysicsBendTargetSpeed(lane);
 
-        if(this.isInChicane)
+        if (this.isInChicane)
             targetSpeed *= 1.09;
+
         return targetSpeed;
-        // TODO CONTINUE FROM HERE
-        // temos que jogar o calculo de velocidade para voltar até a bend anterior em caso de duas bends coladas.
-        // A menor targetSpeed será a utilizada.
-        //
-        /// Quando a velocidade radial = velocidade angular então estamos na iminencia de derrapar
+    };
 
-        // Codigo de segurança
-        if(!extraLengthToDecrement)
-            extraLengthToDecrement = 0.0;
+    this.calculatePhysicsBendTargetSpeed = function(lane) {
+        var laneDistanceFromCenter = this.laneDistanceFromCenter(lane);
+        var radiusInLane = this.radius + laneDistanceFromCenter;
+        var physicsFactor = null;
 
-        var bendLengthFactor = this.radiusInLane(lane) / 400.0;
-        var lengthToDecrement = (this.bendLength(lane) * bendLengthFactor) + extraLengthToDecrement;
-        var maintenanceSpeed = this.maintenanceSpeed(lane, breakingFactor);
-
-        var breakingAcceleration = maintenanceSpeed / breakingFactor;
-        var targetSpeed = 0.0;
-        var counter = 0.0;
-
-        while(lengthToDecrement > 0.0){
-            targetSpeed = maintenanceSpeed + (breakingAcceleration * counter++);
-            lengthToDecrement -= targetSpeed;
-
-            breakingAcceleration = targetSpeed / breakingFactor;
+        // First time running
+        if(this.bendMaxAngle == 0.0)
+            physicsFactor = this.naivePhysicsFactor;
+        if((this.timesCrashedInBend > 0) && (this.bendMaxAngle > this.lastBendMaxAngle) ||
+           (this.timesCrashedInBend <= 0) && (this.lastBendMaxAngle == 0.0 || this.bendMaxAngle < this.lastBendMaxAngle)) {
+            physicsFactor = this.calculatePhysicsFactor();
+        } else {
+            physicsFactor = this.calculatedPhysicsFactor;
         }
 
-        return targetSpeed;
+        if(this.timesCrashedInBend > 0)
+            physicsFactor -= physicsFactor * (this.timesCrashedInBend / 10.0);
+        //else {
+            //var nextBendPiece = this.nextPiece;
+            //while(nextBendPiece.bendIndex != (this.bendIndex + 1)) {
+            //    nextBendPiece = nextBendPiece.nextPiece;
+           // }
 
-/*  Codigo antigo
-        const gravity = 9.78 ;
-        const millisecondsPerTick = 50/3;
+           // if(nextBendPiece.timesCrashedInBend > 0)
+           //     physicsFactor -= physicsFactor * (nextBendPiece.timesCrashedInBend / 20.0);
+        //}
 
-        var laneDistanceFromCenter = this.laneDistanceFromCenter(lane);
-        var radiusInLane = this.radius + laneDistanceFromCenter;
-
-        var maxFriction = Math.sqrt( radiusInLane * (Math.abs(this.angle ) / gravity ));
-        var targetSpeed = ( Math.sqrt( maxFriction * radiusInLane * gravity) / millisecondsPerTick );
-
-        // 50% of the factor is defined by the bend and 50% by the friction factor
-        var factor = Math.abs( targetSpeed  / (this.radius * this.angle )) * 50;
-        targetSpeed -= targetSpeed * (factor * ( breakingFactor / 50)) ;
-
-        return targetSpeed;
-*/
+        return ( Math.sqrt( 2 * GRAVITY_ACCELERATION * radiusInLane * physicsFactor));
+        //return ( Math.sqrt( 2 * GRAVITY_ACCELERATION * radiusInLane * 9));
     };
 
-    /* //atual
-    this.calculatePhysicsBendTargetSpeed = function(lane) {
+    this.calculatePhysicsFactor = function() {
+        var maxAngle = !!this.bendMaxAngle ? this.bendMaxAngle : 45.0;
 
-        var laneDistanceFromCenter = this.laneDistanceFromCenter(lane);
-        var radiusInLane = this.radius + laneDistanceFromCenter;
-
-        return ( Math.sqrt( 2 * GRAVITY_ACCELERATION * radiusInLane * 9));
+        var angleDifferenceFactor = (60.0 - maxAngle) / 15.0;
+        this.calculatedPhysicsFactor = 8.0 + Math.abs(angleDifferenceFactor);
+        return this.calculatedPhysicsFactor;
     };
-*/
-     //teste
-     this.calculatePhysicsBendTargetSpeed = function(lane) {
-     var laneDistanceFromCenter = this.laneDistanceFromCenter(lane);
-     var radiusInLane = this.radius + laneDistanceFromCenter;
-     var maxAngle = !this.bendMaxAngle ? 45.0 : this.bendMaxAngle;
-
-     var angleDifferenceFactor = 8.0 * (( (60.0 - maxAngle) / 60.0 )) ;
-     var physicsFactor = 4 + Math.abs(angleDifferenceFactor);
-
-     var crashFactor = physicsFactor * (this.timesCrashedInBends / 100.0);
-
-     physicsFactor = physicsFactor - crashFactor;
-
-     return ( Math.sqrt( 2 * GRAVITY_ACCELERATION * radiusInLane * physicsFactor));
-     //return ( Math.sqrt( 2 * GRAVITY_ACCELERATION * radiusInLane * 9));
-     };
 
     this.calculateMaintenanceSpeedForLane = function (lane) {
         var radiusInLane = this.radiusInLane(lane);

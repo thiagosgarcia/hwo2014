@@ -18,14 +18,9 @@ var color = process.argv[9];
 var race = new Race();
 client = net.connect(serverPort, serverHost, function() {
     race.message.client = client;
-    return race.message.joinCustomMultiPlayerRace({
+    return race.message.joinOfficialRace({
         botName: botName,
-        botKey: botKey,
-        trackName: trackName,
-        password: password,
-        carCount: carCount,
-        color: color
-
+        botKey: botKey
     });
 });
 

@@ -18,14 +18,12 @@ function Driver(car) {
     this.breakingFactors = [];
     this.speedAccelerationFactor = 49;
 
-    this.angleToCrash = 60.0;
-
     this.switchAI = new SwitchAI(this);
     this.turboAI = new TurboAI(this);
 
     declarePrivateMethods.call(this);
 }
-
+/*
 Driver.prototype.setCrashAngle = function(angle){
     angle = Math.abs(angle);
     var crashAngleDifference = this.angleToCrash - angle;
@@ -38,8 +36,8 @@ Driver.prototype.setCrashAngle = function(angle){
     this.angleToCrash -= crashAngleDifference;
     Logger.setCrashAngle(this.angleToCrash);
     this.incrementCrashCounter.call(this);
-};
-
+};*/
+/*
 Driver.prototype.incrementCrashCounter = function(){
     var car = this.car;
     var crashPiece = car.currentPiece;
@@ -48,14 +46,14 @@ Driver.prototype.incrementCrashCounter = function(){
             return;
         crashPiece = car.currentPiece.previousPiece;
     }
-    crashPiece.timesCrashedInBends ++;
+    crashPiece.timesCrashedInBend ++;
     var pieceToVerify = crashPiece.nextPiece;
     while (pieceToVerify.index != crashPiece.index){
         if(crashPiece.bendIndex == pieceToVerify.bendIndex)
-            pieceToVerify.timesCrashedInBends ++;
+            pieceToVerify.timesCrashedInBend ++;
         pieceToVerify = pieceToVerify.nextPiece;
     }
-};
+};*/
 
 // ***** Throttle intelligence ***** //
 
@@ -205,14 +203,14 @@ function declarePrivateMethods() {
     this.shouldBreakInBend = function() {
 
         var car = this.car;
-        var piece = this.car.currentPiece;
+        var piece = car.currentPiece;
         var maintenanceSpeed = piece.maintenanceSpeed(car.nextLane, this.breakingFactor);
         Logger.setMaintenanceSpeed(maintenanceSpeed);
 
         if(car.currentSpeed <= maintenanceSpeed)
             return false;
 
-        var ticksToCrash = this.ticksToCarAngle(this.angleToCrash);
+        var ticksToCrash = this.ticksToCarAngle(piece.angleToCrash);
         var ticksToMaintenanceSpeed = this.ticksToBreakUntilTargetSpeed(maintenanceSpeed);
 
         Logger.log(" ticksToTargAngle: " + ticksToCrash
