@@ -49,6 +49,14 @@ Piece.prototype.radiusInLane = function(lane) {
     return this.radius + lane.distanceFromCenter;
 };
 
+Piece.prototype.firstPieceInBend = function () {
+    var firstPieceInBend = this;
+    while(firstPieceInBend.previousPiece.bendIndex == this.index) {
+        firstPieceInBend = firstPieceInBend.previousPiece;
+    }
+    return firstPieceInBend;
+};
+
 Piece.prototype.distanceToNextSwitch = function(laneFrom, laneTo) {
     var distance = this["distanceToNextSwitchForLanes" + laneFrom.index + "-" + laneTo.index];
     if(!!distance)

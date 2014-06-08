@@ -100,6 +100,9 @@ Car.prototype.updateCarPosition = function(positionInfoArray) {
 };
 
 Car.prototype.calculateBendMaxSpeed = function(){
+
+
+
     if(!this.currentPiece || this.currentPiece.bendIndex == null)
         return;
     if(this.bendMaxAngle[this.currentPiece.bendIndex] == undefined)
@@ -134,11 +137,7 @@ Car.prototype.distanceInCurrentBend = function() {
     if(this.currentPiece.type == "S")
         return 0.0;
 
-    var currentBendIndex = this.currentPiece.bendIndex;
-    var firstPieceInBend = this.currentPiece;
-    while(firstPieceInBend.previousPiece.bendIndex == currentBendIndex) {
-        firstPieceInBend = firstPieceInBend.previousPiece;
-    }
+    var firstPieceInBend = this.currentPiece.firstPieceInBend();
 
     var distance = Piece.distanceFromPieceToPiece(firstPieceInBend, this.currentPiece, this.lane);
     distance -= this.inPieceDistance;
