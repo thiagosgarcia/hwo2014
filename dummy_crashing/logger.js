@@ -77,17 +77,13 @@ Logger.refresh = function(car) {
         myLogger.angle = car.angle;
         myLogger.angleSpeed = car.angleSpeed;
         myLogger.angleAcceleration = car.angleAcceleration;
-
-        if(!!car.currentPiece) {
-            myLogger.pieceIndex = (car.currentPiece.index + " (" + car.currentPiece.type + ")");
-            myLogger.distanceToNextBend = car.distanceToBend();
-            myLogger.nextBendTargetLane = (!!car.nextLane) ? car.nextLane.index : "";
-            myLogger.crashAngle = car.currentPiece.angleToCrash;
-
-            var firstPieceInBendAhead = car.currentPiece.firstPieceInBendAhead();
-            myLogger.nextBendPieceIndex = firstPieceInBendAhead.index;
-            myLogger.nextBendBendIndex = firstPieceInBendAhead.bendIndex;
-        }
+        myLogger.pieceIndex = (!!car.currentPiece) ? (car.currentPiece.index + " (" + car.currentPiece.type + ")") : "";
+        myLogger.nextBendPieceIndex = (!!car.bendsAhead[0]) ? car.bendsAhead[0].index : "";
+        myLogger.nextBendBendIndex = (!!car.bendsAhead[0]) ? car.bendsAhead[0].bendIndex : "";
+        myLogger.distanceToNextBend = (!!car.currentPiece) ? car.distanceToBend() : "";
+        myLogger.nextBendTargetLane = (!!car.nextLane) ? car.nextLane.index : "";
+        myLogger.targetSpeeds = (!!car.bendsAhead[0] && !!car.bendsAhead[0].targetSpeeds) ? car.bendsAhead[0].targetSpeeds : "";
+        myLogger.crashAngle = (!!car.currentPiece) ? car.currentPiece.angleToCrash : myLogger.angleToCrash;
     }
 
     myLogger.print();
@@ -288,6 +284,17 @@ function declarePrivateMethods() {
         }
         return gauge;
     };
+
+    this.printTargetSpeeds = function () {
+        if(!(this.targetSpeeds instanceof Array))
+            return "";
+        var targetSpeeds = "";
+        var count = this.targetSpeeds.length;
+        for(i = 0; i < count; i++) {
+            targetSpeeds += this.targetSpeeds[i] + " ";
+        }
+        return targetSpeeds;
+    }
 
     this.printLogs = function() {
         var logCount = this.logs.length;

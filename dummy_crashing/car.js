@@ -2,6 +2,8 @@ var Logger = require("./logger.js");
 var Piece = require('./piece.js');
 var Driver = require('./driver.js');
 
+var BENDS_AHEAD_TO_VERIFY = 3;
+
 function getCarPositionInfo(car, positionInfoArray) {
     var positionInfo = {};
 
@@ -33,6 +35,7 @@ function Car(data, track) {
     this.inPieceDistance = null;
 
     this.lap = null;
+
     this.nextSwitchPiece = null;
 
     this.lastLane = null;
@@ -87,6 +90,7 @@ Car.prototype.updateCarPosition = function(positionInfoArray) {
     this.acceleration = this.currentSpeed - this.lastSpeed;
 
     this.updateCheckSwitchFlag();
+    this.getBendsAhead();
     this.getNextSwitchPiece();
 
     if(!!this.currentPiece && this.currentPiece.bendIndex != null)
@@ -145,7 +149,9 @@ Car.prototype.distanceInCurrentBend = function() {
 };
 
 Car.prototype.distanceToBend = function() {
-    return this.distanceToPiece(this.currentPiece.firstPieceInBendAhead());
+    var nextBend = this.bendsAhead[0];
+
+    return this.distanceToPiece(nextBend);
 };
 
 Car.prototype.distanceToPiece = function(nextPiece, laneFrom, laneTo) {
@@ -173,8 +179,8 @@ Car.prototype.inLastStraight = function() {
 };
 
 Car.prototype.laneInNextBend = function(){
-    // Calculates the lane that the car will be in the next bend
-    if(this.nextSwitchPiece.index <= this.currentPiece.firstPieceInBendAhead().index)
+    // Calculates the lane that the car will be in next bend
+    if(this.nextSwitchPiece.index <= this.bendsAhead[0].index)
         return this.nextLane;
 
     return this.lane;

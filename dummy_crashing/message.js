@@ -88,7 +88,7 @@ Message.prototype.turboAvailable = function(data) {
 
 Message.prototype.crash = function(data) {
     Logger.log('Crashed! :(');
-    this.race.setCrashAngle(data['data']);
+    this.race.setCrashAngle(data);
     this.sendPing();
 };
 
@@ -144,7 +144,7 @@ function declarePrivateMethods() {
 
         this.send({
             msgType: "throttle",
-            data: val
+            data: 1
         });
     };
 

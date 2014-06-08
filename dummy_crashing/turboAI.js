@@ -30,7 +30,7 @@ TurboAI.prototype.determineTurboUse = function() {
     var distanceInTurbo = 400.0; //(2 * currentAcc * car.turboFactor * Math.pow(car.turboDurationTicks, 2));
 
     // If the distance to the next bend is greater than the distance the car will travel in Turbo, turbo away!
-    return distanceToBend > distanceInTurbo || car.currentPiece.index == car.biggestStraightIndex;
+    return distanceToBend > distanceInTurbo;
 };
 
 module.exports = TurboAI;
