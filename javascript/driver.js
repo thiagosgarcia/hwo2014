@@ -5,8 +5,6 @@ var Logger = require("./logger.js");
 var SwitchAI = require('./switchAI.js');
 var TurboAI = require('./turboAI.js');
 
-const ANGLE_TO_CRASH = 60.0;
-
 function Driver(car) {
     this.car = car;
     this.checkSwitch = true;
@@ -25,6 +23,37 @@ function Driver(car) {
 
     declarePrivateMethods.call(this);
 }
+/*
+Driver.prototype.setCrashAngle = function(angle){
+    angle = Math.abs(angle);
+    var crashAngleDifference = this.angleToCrash - angle;
+    if( crashAngleDifference < 0 )
+        return;
+
+    crashAngleDifference *= 2;
+    if( crashAngleDifference > 6)
+        crashAngleDifference = 6;
+    this.angleToCrash -= crashAngleDifference;
+    Logger.setCrashAngle(this.angleToCrash);
+    this.incrementCrashCounter.call(this);
+};*/
+/*
+Driver.prototype.incrementCrashCounter = function(){
+    var car = this.car;
+    var crashPiece = car.currentPiece;
+    if(car.currentPiece.type == "S"){
+        if(car.currentPiece.previousPiece == "S")
+            return;
+        crashPiece = car.currentPiece.previousPiece;
+    }
+    crashPiece.timesCrashedInBend ++;
+    var pieceToVerify = crashPiece.nextPiece;
+    while (pieceToVerify.index != crashPiece.index){
+        if(crashPiece.bendIndex == pieceToVerify.bendIndex)
+            pieceToVerify.timesCrashedInBend ++;
+        pieceToVerify = pieceToVerify.nextPiece;
+    }
+};*/
 
 // ***** Throttle intelligence ***** //
 
@@ -47,6 +76,7 @@ Driver.prototype.driveForStraight = function() {
         return 1.0;
     }
 
+    this.ticksBreakingInStraight++;
     this.ticksBreakingInStraight++;
     if(this.isTimeToCalculateTheBreakingFactor())
         this.calculateBreakingFactor();
@@ -173,14 +203,14 @@ function declarePrivateMethods() {
     this.shouldBreakInBend = function() {
 
         var car = this.car;
-        var piece = this.car.currentPiece;
+        var piece = car.currentPiece;
         var maintenanceSpeed = piece.maintenanceSpeed(car.nextLane, this.breakingFactor);
         Logger.setMaintenanceSpeed(maintenanceSpeed);
 
         if(car.currentSpeed <= maintenanceSpeed)
             return false;
 
-        var ticksToCrash = this.ticksToCarAngle(ANGLE_TO_CRASH);
+        var ticksToCrash = this.ticksToCarAngle(piece.angleToCrash);
         var ticksToMaintenanceSpeed = this.ticksToBreakUntilTargetSpeed(maintenanceSpeed);
 
         Logger.log(" ticksToTargAngle: " + ticksToCrash
@@ -190,6 +220,8 @@ function declarePrivateMethods() {
             + " | angleAccFactor: " + car.angleAccelerationFactor
             + " | " + maintenanceSpeed );
 
+        if(piece.isInChicane)
+            ticksToMaintenanceSpeed *= 1.09;
         return ticksToCrash < ticksToMaintenanceSpeed;
     };
 

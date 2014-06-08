@@ -1,4 +1,4 @@
-global.ANGLE_TO_CRASH = 60.0;
+//global.ANGLE_TO_CRASH = 60.0;
 
 global.GRAVITY_ACCELERATION = 97.8 / 3600.0;
 global.MS_PER_TICK = 50.0 / 3.0;

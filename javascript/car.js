@@ -55,6 +55,8 @@ function Car(data, track) {
     this.turboDurationTicks = 0;
     this.turboFactor = 1.0;
 
+    this.bendMaxAngle = [];
+
     this.driver = new Driver(this);
 
     declarePrivateMethods.call(this);
@@ -91,9 +93,41 @@ Car.prototype.updateCarPosition = function(positionInfoArray) {
     this.getBendsAhead();
     this.getNextSwitchPiece();
 
+    if(!!this.currentPiece && this.currentPiece.bendIndex != null)
+        this.updateCurrentBendMaxAngle();
+
+    if(!!this.lastPiece && this.lastPiece.bendIndex != null && this.currentPiece.bendIndex != this.lastPiece.bendIndex)
+        this.setLastBendMaxAngle();
+
     this.lastPiece = this.currentPiece;
     this.lastInPieceDistance = this.inPieceDistance;
     this.lastSpeed = this.currentSpeed;
+};
+
+Car.prototype.updateCurrentBendMaxAngle = function() {
+    if(this.bendMaxAngle[this.currentPiece.bendIndex] == undefined)
+        this.bendMaxAngle[this.currentPiece.bendIndex] = 0.0;
+
+    var currentBendMaxAngle = this.bendMaxAngle[this.currentPiece.bendIndex];
+    if(Math.abs(this.angle) > currentBendMaxAngle ) {
+        this.bendMaxAngle[this.currentPiece.bendIndex] = Math.abs(this.angle);
+        console.log(" maxAngle " + Math.abs(this.angle));
+    }
+};
+
+Car.prototype.setLastBendMaxAngle = function() {
+    var currentBendMaxAngle = this.bendMaxAngle[this.lastPiece.bendIndex];
+    var piecesInBend = this.lastPiece.piecesInBend();
+    for(var i = 0; i < piecesInBend.length; i++) {
+        var pieceInBend = piecesInBend[i];
+        var lastBendMaxAngle = pieceInBend.bendMaxAngle;
+        pieceInBend.bendMaxAngle = currentBendMaxAngle;
+        pieceInBend.lastBendMaxAngle = lastBendMaxAngle;
+    }
+};
+
+Car.prototype.setCrashAngle = function () {
+    this.currentPiece.setCrashAngle(this.angle);
 };
 
 Car.prototype.rechargeTurbo = function(turboInfo) {
@@ -106,11 +140,7 @@ Car.prototype.distanceInCurrentBend = function() {
     if(this.currentPiece.type == "S")
         return 0.0;
 
-    var currentBendIndex = this.currentPiece.bendIndex;
-    var firstPieceInBend = this.currentPiece;
-    while(firstPieceInBend.previousPiece.bendIndex == currentBendIndex) {
-        firstPieceInBend = firstPieceInBend.previousPiece;
-    }
+    var firstPieceInBend = this.currentPiece.firstPieceInBend();
 
     var distance = Piece.distanceFromPieceToPiece(firstPieceInBend, this.currentPiece, this.lane);
     distance -= this.inPieceDistance;

@@ -86,6 +86,17 @@ Message.prototype.turboAvailable = function(data) {
     this.sendPing();
 };
 
+Message.prototype.crash = function(data) {
+    Logger.log('Crashed! :(');
+    this.race.setCrashAngle();
+    this.sendPing();
+};
+
+Message.prototype.spawn = function(data) {
+    Logger.log('Respawn! :)');
+    this.sendThrottle(1.0);
+};
+
 Message.prototype.lapFinished = function(data) {
     Logger.log('Lap finished.');
     this.sendPing();
