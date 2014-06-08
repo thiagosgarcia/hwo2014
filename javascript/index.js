@@ -25,6 +25,7 @@ client = net.connect(serverPort, serverHost, function() {
 });
 
 Logger.log("I'm", botName, "and connect to", serverHost + ":" + serverPort);
+Logger.setServer(serverHost);
 
 jsonStream = client.pipe(JSONStream.parse());
 jsonStream.on('data', function(data) {

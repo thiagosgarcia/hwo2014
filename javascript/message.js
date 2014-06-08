@@ -21,7 +21,22 @@ Message.prototype.joinCustomRace = function(parameters) {
             },
             trackName: parameters.trackName,
             password: parameters.password,
-            carCount: parameters.carCount
+            carCount: parseInt(parameters.carCount)
+        }
+    });
+};
+
+Message.prototype.joinCustomMultiPlayerRace = function(parameters) {
+    return this.send({
+        msgType: "joinRace",
+        data: {
+            botId: {
+                name: parameters.botName,
+                key: parameters.botKey
+            },
+            trackName: parameters.trackName,
+            password: parameters.password,
+            carCount: parseInt(parameters.carCount)
         }
     });
 };
@@ -69,6 +84,17 @@ Message.prototype.carPositions = function(data) {
 Message.prototype.turboAvailable = function(data) {
     this.race.rechargeTurbo(data['data']);
     this.sendPing();
+};
+
+Message.prototype.crash = function(data) {
+    Logger.log('Crashed! :(');
+    this.race.setCrashAngle();
+    this.sendPing();
+};
+
+Message.prototype.spawn = function(data) {
+    Logger.log('Respawn! :)');
+    this.sendThrottle(1.0);
 };
 
 Message.prototype.lapFinished = function(data) {

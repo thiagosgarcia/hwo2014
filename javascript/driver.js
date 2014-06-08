@@ -1,9 +1,9 @@
-var Logger = require("./logger.js");
 require('./array.median.js');
+require('./constants.js');
+
+var Logger = require("./logger.js");
 var SwitchAI = require('./switchAI.js');
 var TurboAI = require('./turboAI.js');
-
-const ANGLE_TO_CRASH = 60.0;
 
 function Driver(car) {
     this.car = car;
@@ -11,6 +11,7 @@ function Driver(car) {
 
     // Empyrical result;
     this.breakingFactor = 49.0;
+    Logger.setBreakingFactor(this.breakingFactor);
 
     // Break learning variables
     this.ticksBreakingInStraight = 0;
@@ -22,6 +23,37 @@ function Driver(car) {
 
     declarePrivateMethods.call(this);
 }
+/*
+Driver.prototype.setCrashAngle = function(angle){
+    angle = Math.abs(angle);
+    var crashAngleDifference = this.angleToCrash - angle;
+    if( crashAngleDifference < 0 )
+        return;
+
+    crashAngleDifference *= 2;
+    if( crashAngleDifference > 6)
+        crashAngleDifference = 6;
+    this.angleToCrash -= crashAngleDifference;
+    Logger.setCrashAngle(this.angleToCrash);
+    this.incrementCrashCounter.call(this);
+};*/
+/*
+Driver.prototype.incrementCrashCounter = function(){
+    var car = this.car;
+    var crashPiece = car.currentPiece;
+    if(car.currentPiece.type == "S"){
+        if(car.currentPiece.previousPiece == "S")
+            return;
+        crashPiece = car.currentPiece.previousPiece;
+    }
+    crashPiece.timesCrashedInBend ++;
+    var pieceToVerify = crashPiece.nextPiece;
+    while (pieceToVerify.index != crashPiece.index){
+        if(crashPiece.bendIndex == pieceToVerify.bendIndex)
+            pieceToVerify.timesCrashedInBend ++;
+        pieceToVerify = pieceToVerify.nextPiece;
+    }
+};*/
 
 // ***** Throttle intelligence ***** //
 
@@ -45,6 +77,7 @@ Driver.prototype.driveForStraight = function() {
     }
 
     this.ticksBreakingInStraight++;
+    this.ticksBreakingInStraight++;
     if(this.isTimeToCalculateTheBreakingFactor())
         this.calculateBreakingFactor();
 
@@ -54,7 +87,7 @@ Driver.prototype.driveForStraight = function() {
 Driver.prototype.driveForBend = function() {
     var car = this.car;
     this.ticksBreakingInStraight = 0;
-    if(car.angleSpeed < 0.0)
+    if(car.angleSpeed <= 0.0)
         return 1.0;
 
     if(this.shouldBreakInBend() || this.shouldBreakForTargetSpeed())
@@ -170,25 +203,14 @@ function declarePrivateMethods() {
     this.shouldBreakInBend = function() {
 
         var car = this.car;
-        var piece = this.car.currentPiece;
-/*
-        var pieceLength = piece.lengthInLane(car.lane);
-        var inPiecePosition = car.inPieceDistance;
-        var angleInRadians = car.angleInRadians;
-        var inPieceRadianPosition = angleInRadians * inPiecePosition / pieceLength;
-        var inPieceLastRadianPosition = angleInRadians * car.inPieceDistance - car.acceleration / pieceLength;
-
-        var radianPerTick = inPieceRadianPosition - inPieceLastRadianPosition;
-        var centripetSpeed = Math.pow(radianPerTick, 2) * radiusInLane;
-*/
-
-        var radiusInLane = piece.radiusInLane(car.nextLane);
-        var maintenanceSpeed = Math.sqrt(radiusInLane / this.breakingFactor * 9.78);
+        var piece = car.currentPiece;
+        var maintenanceSpeed = piece.maintenanceSpeed(car.nextLane, this.breakingFactor);
+        Logger.setMaintenanceSpeed(maintenanceSpeed);
 
         if(car.currentSpeed <= maintenanceSpeed)
             return false;
 
-        var ticksToCrash = this.ticksToCarAngle(ANGLE_TO_CRASH);
+        var ticksToCrash = this.ticksToCarAngle(piece.angleToCrash);
         var ticksToMaintenanceSpeed = this.ticksToBreakUntilTargetSpeed(maintenanceSpeed);
 
         Logger.log(" ticksToTargAngle: " + ticksToCrash
@@ -198,6 +220,8 @@ function declarePrivateMethods() {
             + " | angleAccFactor: " + car.angleAccelerationFactor
             + " | " + maintenanceSpeed );
 
+        if(piece.isInChicane)
+            ticksToMaintenanceSpeed *= 1.09;
         return ticksToCrash < ticksToMaintenanceSpeed;
     };
 
