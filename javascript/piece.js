@@ -254,30 +254,32 @@ function declarePrivateMethods() {
 */
     };
 
+    /* //atual
     this.calculatePhysicsBendTargetSpeed = function(lane) {
+
         var laneDistanceFromCenter = this.laneDistanceFromCenter(lane);
         var radiusInLane = this.radius + laneDistanceFromCenter;
 
         return ( Math.sqrt( 2 * GRAVITY_ACCELERATION * radiusInLane * 9));
     };
-
-    /* teste
+*/
+     //teste
      this.calculatePhysicsBendTargetSpeed = function(lane) {
      var laneDistanceFromCenter = this.laneDistanceFromCenter(lane);
      var radiusInLane = this.radius + laneDistanceFromCenter;
-     var maxAngle = !this.bendMaxAngle ? 30 : this.bendMaxAngle
+     var maxAngle = !this.bendMaxAngle ? 45.0 : this.bendMaxAngle;
 
-     var angleDifferenceFactor = 4 * (( (60 - maxAngle) / 60 )) -1 ;
-     var physicsFactor = 8 + Math.abs(angleDifferenceFactor);
+     var angleDifferenceFactor = 8.0 * (( (60.0 - maxAngle) / 60.0 )) ;
+     var physicsFactor = 4 + Math.abs(angleDifferenceFactor);
 
-     var crashFactor = physicsFactor * (this.timesCrashedInBends / 100);
+     var crashFactor = physicsFactor * (this.timesCrashedInBends / 100.0);
 
      physicsFactor = physicsFactor - crashFactor;
 
      return ( Math.sqrt( 2 * GRAVITY_ACCELERATION * radiusInLane * physicsFactor));
      //return ( Math.sqrt( 2 * GRAVITY_ACCELERATION * radiusInLane * 9));
      };
-     */
+
     this.calculateMaintenanceSpeedForLane = function (lane) {
         var radiusInLane = this.radiusInLane(lane);
         var maintenanceSpeed = Math.sqrt(radiusInLane / this.lastBreakingFactor * 9.78);

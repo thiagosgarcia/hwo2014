@@ -28,10 +28,15 @@ function Driver(car) {
 
 Driver.prototype.setCrashAngle = function(angle){
     angle = Math.abs(angle);
-    if(this.angleToCrash > angle){
-        this.angleToCrash = angle;
-        Logger.setCrashAngle(this.angleToCrash);
-    }
+    var crashAngleDifference = this.angleToCrash - angle;
+    if( crashAngleDifference < 0 )
+        return;
+
+    crashAngleDifference *= 2;
+    if( crashAngleDifference > 6)
+        crashAngleDifference = 6;
+    this.angleToCrash -= crashAngleDifference;
+    Logger.setCrashAngle(this.angleToCrash);
     this.incrementCrashCounter.call(this);
 };
 
