@@ -280,7 +280,7 @@ function declarePrivateMethods() {
         if(this.bendMaxAngle == 0.0 || this.timesCrashedInBend > 0)
             return this.naivePhysicsFactor;
 
-        if(this.lastBendMaxAngle == 0.0 || this.bendMaxAngle <= 54.0 || this.bendMaxAngle < this.lastBendMaxAngle)
+        if(this.bendMaxAngle <= 54.0 && (this.lastBendMaxAngle == 0.0 || this.bendMaxAngle < this.lastBendMaxAngle))
             return this.recalculatePhysicsFactor();
 
         return this.calculatedPhysicsFactor;
