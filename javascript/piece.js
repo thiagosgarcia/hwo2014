@@ -38,19 +38,19 @@ function Piece(data, index, track) {
 
 Piece.prototype.setCrashAngle = function(angle){
     var crashPiece = this;
-    if(this.type == "S"){
+    if(this.type == "S") {
         if(this.previousPiece == "S")
             return;
         crashPiece = this.previousPiece;
     }
 
     angle = Math.abs(angle);
-    var crashAngleDifference = ANGLE_TO_CRASH - angle;
-    if( crashAngleDifference < 0.0 ){
+    var crashAngleDifference = this.angleToCrash - angle;
+    if( crashAngleDifference < 0.0 ) {
         crashAngleDifference = 0.0;
     }
 
-    crashAngleDifference *= (crashPiece.timesCrashedInBend + 2.0);
+    crashAngleDifference *= 2.0;
 
     if( crashAngleDifference > 6.0)
         crashAngleDifference = 6.0;
@@ -280,14 +280,14 @@ function declarePrivateMethods() {
         if(this.bendMaxAngle == 0.0 || this.timesCrashedInBend > 0)
             return this.naivePhysicsFactor;
 
-        if(this.bendMaxAngle <= 54.0 && (this.lastBendMaxAngle == 0.0 || this.bendMaxAngle < this.lastBendMaxAngle))
+        if(this.bendMaxAngle <= 45.0 && (this.lastBendMaxAngle == 0.0 || this.bendMaxAngle < this.lastBendMaxAngle))
             return this.recalculatePhysicsFactor();
 
         return this.calculatedPhysicsFactor;
     };
 
     this.recalculatePhysicsFactor = function() {
-        var angleDifferenceFactor = (60.0 - this.bendMaxAngle) / 15.0;
+        var angleDifferenceFactor = (60.0 - this.bendMaxAngle) / 12.0;
         this.calculatedPhysicsFactor = this.naivePhysicsFactor + Math.abs(angleDifferenceFactor);
         return this.calculatedPhysicsFactor;
     };
