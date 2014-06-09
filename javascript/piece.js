@@ -263,7 +263,7 @@ function declarePrivateMethods() {
         var targetSpeed = this.calculatePhysicsBendTargetSpeed(lane);
 
         if (this.isInChicane)
-            targetSpeed *= 1.09;
+            targetSpeed *= 1; //1.12;
 
         return targetSpeed;
     };

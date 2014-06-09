@@ -204,7 +204,7 @@ function declarePrivateMethods() {
     };
 
     this.setPiecesAsChicanes = function(pieces, initialIndex, finalIndex){
-        for(var i = initialIndex; i < finalIndex; i++){
+        for(var i = initialIndex; i < finalIndex - 1; i++){
             pieces[i].isInChicane = true;
         }
     };
