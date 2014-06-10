@@ -268,9 +268,6 @@ function declarePrivateMethods() {
     this.calculateBendTargetSpeed = function (lane) {
         var targetSpeed = this.calculatePhysicsBendTargetSpeed(lane);
 
-        if (this.isInChicane)
-            targetSpeed *= 1; //1.12;
-
         return targetSpeed;
     };
 
@@ -286,7 +283,7 @@ function declarePrivateMethods() {
         if(this.bendMaxAngle == 0.0 || this.timesCrashedInBend > 0)
             return this.naivePhysicsFactor;
 
-        if(this.bendMaxAngle <= 45.0 && (this.lastBendMaxAngle == 0.0 || this.bendMaxAngle < this.lastBendMaxAngle))
+        if(this.bendMaxAngle < 40.0 && (this.lastBendMaxAngle == 0.0 ))//|| this.bendMaxAngle < this.lastBendMaxAngle))
             return this.recalculatePhysicsFactor();
 
         return this.calculatedPhysicsFactor;
