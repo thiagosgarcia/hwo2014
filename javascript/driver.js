@@ -192,7 +192,8 @@ function declarePrivateMethods() {
             return targetSpeed;
 
         var divisionCounter = 1;
-        while(this.canBreakFromSpeedToNextBendTargetSpeed(nextBendPiece, targetSpeed, targetSpeedForSecondBendAhead, 0.0)) {
+        while(this.canBreakFromSpeedToNextBendTargetSpeed(nextBendPiece, targetSpeed, targetSpeedForSecondBendAhead, 0.0)
+                || divisionCounter > 1000) {
             targetSpeed -= ((targetSpeed - targetSpeedForSecondBendAhead) / (divisionCounter * 2.0));
             divisionCounter++;
         }

@@ -60,6 +60,13 @@ Piece.prototype.setCrashAngle = function(angle){
 
 Piece.prototype.incrementCrashCounter = function(maxAngle) {
     var piecesInCrashBend = this.piecesInBend();
+    var previousBendPiece = this.firstPieceInBend().previousPiece;
+
+    while(previousBendPiece.type == "B") {
+        piecesInCrashBend.push(previousBendPiece);
+        previousBendPiece = previousBendPiece.previousPiece;
+    }
+
     for(var i = 0; i < piecesInCrashBend.length; i++) {
         var crashPiece = piecesInCrashBend[i];
         crashPiece.timesCrashedInBend++;
@@ -145,6 +152,8 @@ Piece.prototype.targetSpeed = function (lane, breakingFactor) {
     this.lastBreakingFactor = breakingFactor;
     var targetSpeed = this.targetSpeeds[lane.index];
 
+    return (targetSpeed - (targetSpeed * (this.timesCrashedInBend / 10.0)));
+    ///
     var calculatedTargetSpeed = (targetSpeed - (targetSpeed * (this.timesCrashedInBend / 10.0)));
     var maintenanceSpeed = this.maintenanceSpeed(lane);
     // If target speed is greater than maintenance, then we have to bring it down
@@ -246,22 +255,6 @@ function declarePrivateMethods() {
 
     this.targetSpeedForLane = function(lane) {
         var thisBendTargetSpeed = this.calculateBendTargetSpeed(lane);
-
-        var pieceToVerify = this.bendExitPiece();
-        if(pieceToVerify.type == "S")
-            return thisBendTargetSpeed;
-
-        var pieceToVerifyTargetSpeed = pieceToVerify.calculateBendTargetSpeed(lane);
-
-        while (pieceToVerify.type == "B" &&
-               thisBendTargetSpeed > pieceToVerifyTargetSpeed) {
-
-            thisBendTargetSpeed = pieceToVerifyTargetSpeed;
-
-            pieceToVerifyTargetSpeed = pieceToVerify.calculateBendTargetSpeed(lane);
-            pieceToVerify = pieceToVerify.bendExitPiece();
-        }
-
         return thisBendTargetSpeed;
     };
 
@@ -283,7 +276,7 @@ function declarePrivateMethods() {
         if(this.bendMaxAngle == 0.0 || this.timesCrashedInBend > 0)
             return this.naivePhysicsFactor;
 
-        if(this.bendMaxAngle < 40.0 && (this.lastBendMaxAngle == 0.0 ))//|| this.bendMaxAngle < this.lastBendMaxAngle))
+        if(this.bendMaxAngle < 40.0 && (this.lastBendMaxAngle == 0.0 || this.bendMaxAngle < this.lastBendMaxAngle))
             return this.recalculatePhysicsFactor();
 
         return this.calculatedPhysicsFactor;

@@ -240,8 +240,8 @@ function declarePrivateMethods() {
 
     this.getNextSwitchPiece = function() {
         var pieceToVerify = this.currentPiece;
-
-        while(this.nextSwitchPiece === null) {
+        var counter = 0;
+        while(this.nextSwitchPiece === null || counter++ > 1000) {
             pieceToVerify = pieceToVerify.nextPiece;
 
             if(pieceToVerify.hasSwitch) {
