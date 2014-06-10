@@ -158,7 +158,7 @@ function declarePrivateMethods() {
         }
     };
 
-    this.setChicanes = function(pieces, lanes){
+    this.setChicanes = function(pieces) {
         var i = -1;
         var angleCounter = 0;
         var firstIndex = null;
@@ -170,13 +170,14 @@ function declarePrivateMethods() {
             var nextPiece = pieces[i+1];
 
             //small straight
-            /*if()
-                continue;*/
+            if(pieceToVerify.type == "S" && pieceToVerify.length > 30)
+                continue;
 
-            if(pieceToVerify.type == "B" || pieceToVerify.length > 20){
+            if(pieceToVerify.type == "B") {
                 angleCounter += pieceToVerify.angle;
                 firstIndex = firstIndex == null ? i : firstIndex;
                 lastIndex = i;
+
             }
 
             if(!!lastPiece && lastPiece.type == "B" && nextPiece.type == "B"
@@ -184,9 +185,22 @@ function declarePrivateMethods() {
                 continue;
             }
 
-            if(firstIndex != null && lastIndex != null && angleCounter == 0){
+
+            pieceToVerify.piecesInBend();
+            if(firstIndex != null && lastIndex != null && angleCounter == 0) {
                 this.setPiecesAsChicanes(pieces, firstIndex, lastIndex);
             }
+            if(pieceToVerify.type == "B") {
+                // big bend
+                var bendLength = Piece.angleInRadians(pieceToVerify.bendAngle()) * pieceToVerify.radius;
+                if (bendLength >= 50) {
+                    firstIndex = null;
+                    lastIndex = null;
+                    angleCounter = 0;
+                    continue;
+                }
+            }
+
             if(pieceToVerify.type == "S") {
                 firstIndex = null;
                 lastIndex = null;

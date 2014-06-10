@@ -54,7 +54,7 @@ Piece.prototype.setCrashAngle = function(angle){
 
     if( crashAngleDifference > 6.0)
         crashAngleDifference = 6.0;
-    crashPiece.angleToCrash -= crashAngleDifference;
+    //crashPiece.angleToCrash -= crashAngleDifference;
     crashPiece.incrementCrashCounter(crashPiece.angleToCrash);
 };
 
@@ -70,7 +70,7 @@ Piece.prototype.incrementCrashCounter = function(maxAngle) {
     for(var i = 0; i < piecesInCrashBend.length; i++) {
         var crashPiece = piecesInCrashBend[i];
         crashPiece.timesCrashedInBend++;
-        crashPiece.angleToCrash = maxAngle;
+        //crashPiece.angleToCrash = maxAngle;
     }
 };
 
@@ -341,17 +341,7 @@ function declarePrivateMethods() {
     };
 
     this.bendAngle = function() {
-        var bendIndex = this.bendIndex;
-        var firstBendPiece = null;
-
-        for(var i = 0; i < this.track.pieces.length; i++) {
-            var piece = this.track.pieces[i];
-
-            if(piece.bendIndex == bendIndex) {
-                firstBendPiece = piece;
-                break;
-            }
-        }
+        var firstBendPiece = this.firstPieceInBend();
 
         var bendAngle = firstBendPiece.angle;
         var pieceToVerify = firstBendPiece.nextPiece;
