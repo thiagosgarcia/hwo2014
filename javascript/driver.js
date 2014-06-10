@@ -286,7 +286,8 @@ function declarePrivateMethods() {
         var angleSpeed = this.car.angleSpeed;
         var angleAcc = this.car.angleAcceleration;
 
-        while(angleDelta > 0.0) {
+        // infinite loop bug [2]
+        while(angleDelta > 0.0 || ticks > 1000) {
             angleDelta -= angleSpeed + (angleAcc * ticks);
             ticks++;
         }
@@ -296,7 +297,12 @@ function declarePrivateMethods() {
 
     this.getTicksToTravelDistance = function(distance, speed, acceleration) {
         var ticks = 0;
-        while(distance > 0.0) {
+
+        // infinite loop bug [2]
+        if(speed <= 0)
+            return ticks;
+
+        while(distance > 0.0 || ticks > 1000) {
             distance -= speed + (acceleration * ticks);
             ticks++;
         }

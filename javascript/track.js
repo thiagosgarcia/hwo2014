@@ -19,6 +19,8 @@ function Track(data, raceInfo) {
     this.buildTrackPieces(data.pieces);
     this.buildTrackLanes(data.lanes);
 
+    this.setChicanes(this.pieces, this.lanes);
+
     var indexes = biggestAndLastStraightIndexes(this.pieces);
     this.biggestStraightIndex = indexes.biggestStraightIndex;
     this.lastStraightIndex = indexes.lastStraightIndex;
@@ -85,7 +87,6 @@ function declarePrivateMethods() {
         this.pieces[0].previousPiece = this.pieces[this.pieces.length - 1];
 
         this.calculateBendIndexes();
-        this.setChicanes(this.pieces);
     };
 
     this.buildTrackPiece = function(piecesInfo, index) {
@@ -157,34 +158,33 @@ function declarePrivateMethods() {
         }
     };
 
-    this.setChicanes = function(pieces){
+    this.setChicanes = function(pieces, lanes){
         var i = -1;
         var angleCounter = 0;
         var firstIndex = null;
         var lastIndex = null;
-        var smallStraights = 0;
         var pieceToVerify = null;
         while (++i < pieces.length - 1){
             var lastPiece = pieceToVerify;
             pieceToVerify = pieces[i];
             var nextPiece = pieces[i+1];
 
-            if(pieceToVerify.length > 100)
-                continue;
+            //small straight
+            /*if()
+                continue;*/
 
-            if(pieceToVerify.type == "B"){
+            if(pieceToVerify.type == "B" || pieceToVerify.length > 20){
                 angleCounter += pieceToVerify.angle;
                 firstIndex = firstIndex == null ? i : firstIndex;
                 lastIndex = i;
-                smallStraights = 0;
             }
 
             if(!!lastPiece && lastPiece.type == "B" && nextPiece.type == "B"
-                && lastPiece.angle + nextPiece.angle == 0 && pieceToVerify.length <= 30){
+                && lastPiece.angle + nextPiece.angle == 0 && pieceToVerify.length <= 25){
                 continue;
             }
 
-            if(firstIndex != null && lastIndex != null && angleCounter == 0 && smallStraights == 0){
+            if(firstIndex != null && lastIndex != null && angleCounter == 0){
                 this.setPiecesAsChicanes(pieces, firstIndex, lastIndex);
             }
             if(pieceToVerify.type == "S") {
@@ -204,7 +204,7 @@ function declarePrivateMethods() {
     };
 
     this.setPiecesAsChicanes = function(pieces, initialIndex, finalIndex){
-        for(var i = initialIndex; i < finalIndex - 1; i++){
+        for(var i = initialIndex; i < finalIndex; i++){
             pieces[i].isInChicane = true;
         }
     };

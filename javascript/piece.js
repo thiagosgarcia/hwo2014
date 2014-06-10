@@ -148,7 +148,7 @@ Piece.prototype.targetSpeed = function (lane, breakingFactor) {
     var calculatedTargetSpeed = (targetSpeed - (targetSpeed * (this.timesCrashedInBend / 10.0)));
     var maintenanceSpeed = this.maintenanceSpeed(lane);
     // If target speed is greater than maintenance, then we have to bring it down
-    calculatedTargetSpeed = maintenanceSpeed > calculatedTargetSpeed - 0.1 ? maintenanceSpeed + 0.1 : calculatedTargetSpeed;
+    calculatedTargetSpeed = maintenanceSpeed >= calculatedTargetSpeed ? maintenanceSpeed + 0.1 : calculatedTargetSpeed;
 
     return calculatedTargetSpeed;
 };
