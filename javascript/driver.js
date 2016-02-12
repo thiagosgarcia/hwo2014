@@ -192,7 +192,8 @@ function declarePrivateMethods() {
             return targetSpeed;
 
         var divisionCounter = 1;
-        while(this.canBreakFromSpeedToNextBendTargetSpeed(nextBendPiece, targetSpeed, targetSpeedForSecondBendAhead, 0.0)) {
+        while(this.canBreakFromSpeedToNextBendTargetSpeed(nextBendPiece, targetSpeed, targetSpeedForSecondBendAhead, 0.0)
+                || divisionCounter > 1000) {
             targetSpeed -= ((targetSpeed - targetSpeedForSecondBendAhead) / (divisionCounter * 2.0));
             divisionCounter++;
         }
@@ -228,6 +229,10 @@ function declarePrivateMethods() {
         if(car.currentSpeed <= maintenanceSpeed)
             return false;
 
+        if(piece.isInChicane)
+            maintenanceSpeed = piece.targetSpeed(this.car.lane, this.breakingFactor, piece.timesCrashedInBend);
+            //maintenanceSpeed *= 1.12;
+
         var ticksToCrash = this.ticksToCarAngle(piece.angleToCrash);
         var ticksToMaintenanceSpeed = this.ticksToBreakToTargetSpeed(this.car.currentSpeed, maintenanceSpeed);
 
@@ -238,8 +243,6 @@ function declarePrivateMethods() {
             + " | angleAccFactor: " + car.angleAccelerationFactor
             + " | " + maintenanceSpeed );
 
-        if(piece.isInChicane)
-            ticksToMaintenanceSpeed *= 1.09;
         return ticksToCrash < ticksToMaintenanceSpeed;
     };
 
@@ -284,7 +287,8 @@ function declarePrivateMethods() {
         var angleSpeed = this.car.angleSpeed;
         var angleAcc = this.car.angleAcceleration;
 
-        while(angleDelta > 0.0) {
+        // infinite loop bug [2]
+        while(angleDelta > 0.0 || ticks > 1000) {
             angleDelta -= angleSpeed + (angleAcc * ticks);
             ticks++;
         }
@@ -294,7 +298,12 @@ function declarePrivateMethods() {
 
     this.getTicksToTravelDistance = function(distance, speed, acceleration) {
         var ticks = 0;
-        while(distance > 0.0) {
+
+        // infinite loop bug [2]
+        if(speed <= 0)
+            return ticks;
+
+        while(distance > 0.0 || ticks > 1000) {
             distance -= speed + (acceleration * ticks);
             ticks++;
         }

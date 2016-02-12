@@ -9,7 +9,7 @@ TurboAI.prototype.determineTurboUse = function() {
 
     // If the car is breaking (acc <= 0.0), the turbo will not be optimized
     // Check if the car angle is low enough to be safe to use the turbo
-    if(currentAcc <= 0.0 || Math.abs(car.angle) > 30.0)
+    if(currentAcc <= 0.0 || Math.abs(car.angle) > 40.0)
         return false;
 
     if(car.inLastStraight())
@@ -27,7 +27,7 @@ TurboAI.prototype.determineTurboUse = function() {
     }
 
     var distanceToBend = car.distanceToBend();
-    var distanceInTurbo = 400.0; //(2 * currentAcc * car.turboFactor * Math.pow(car.turboDurationTicks, 2));
+    var distanceInTurbo = 300.0; //(2 * currentAcc * car.turboFactor * Math.pow(car.turboDurationTicks, 2));
 
     // If the distance to the next bend is greater than the distance the car will travel in Turbo, turbo away!
     return distanceToBend > distanceInTurbo || car.currentPiece.index == car.biggestStraightIndex;

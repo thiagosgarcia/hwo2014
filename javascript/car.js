@@ -112,6 +112,8 @@ Car.prototype.updateCurrentBendMaxAngle = function() {
 };
 
 Car.prototype.setLastBendMaxAngle = function() {
+    if(this.lastPiece.bendIndex < 3 && ( this.lap == null || this.lap == 0))
+        return;
     var currentBendMaxAngle = this.bendMaxAngle[this.lastPiece.bendIndex];
     var piecesInBend = this.lastPiece.piecesInBend();
     for(var i = 0; i < piecesInBend.length; i++) {
@@ -238,8 +240,8 @@ function declarePrivateMethods() {
 
     this.getNextSwitchPiece = function() {
         var pieceToVerify = this.currentPiece;
-
-        while(this.nextSwitchPiece === null) {
+        var counter = 0;
+        while(this.nextSwitchPiece === null || counter++ > 1000) {
             pieceToVerify = pieceToVerify.nextPiece;
 
             if(pieceToVerify.hasSwitch) {

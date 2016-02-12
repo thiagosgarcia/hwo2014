@@ -34,6 +34,7 @@ function Logger(serverName) {
     this.angleSpeed = "";
     this.angleAcceleration = "";
     this.pieceIndex = "";
+    this.isInChicane = "";
     this.nextBendPieceIndex = "";
     this.nextBendBendIndex = "";
     this.nextBendTargetLane = "";
@@ -83,6 +84,7 @@ Logger.refresh = function(car) {
             myLogger.distanceToNextBend = car.distanceToBend();
             myLogger.nextBendTargetLane = (!!car.nextLane) ? car.nextLane.index : "";
             myLogger.crashAngle = car.currentPiece.angleToCrash;
+            myLogger.isInChicane = car.currentPiece.isInChicane;
 
             var firstPieceInBendAhead = car.currentPiece.firstPieceInBendAhead();
             myLogger.nextBendPieceIndex = firstPieceInBendAhead.index;
@@ -154,6 +156,7 @@ function declarePrivateMethods() {
         Angle acceleration:           %angleAcceleration%\n\
         CrashAngle:                   %crashAngle%\n\
         Piece:                        %pieceIndex%\n\
+        Chicane:                      %isInChicane%\n\
         Next bend:                    %nextBendPieceIndex%-%nextBendBendIndex%\n\
         Distance to next bend:        %distanceToNextBend%\n\
         Next lane:                    %nextBendTargetLane%\n\
@@ -185,6 +188,7 @@ function declarePrivateMethods() {
         output = output.replace("%angleAcceleration%", this.angleAcceleration);
         output = output.replace("%crashAngle%", this.crashAngle);
         output = output.replace("%pieceIndex%", this.pieceIndex);
+        output = output.replace("%isInChicane%", this.isInChicane);
         output = output.replace("%nextBendPieceIndex%", this.nextBendPieceIndex);
         output = output.replace("%nextBendBendIndex%", this.nextBendBendIndex);
         output = output.replace("%distanceToNextBend%", this.distanceToNextBend);
