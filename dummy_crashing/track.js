@@ -19,8 +19,6 @@ function Track(data, raceInfo) {
     this.buildTrackPieces(data.pieces);
     this.buildTrackLanes(data.lanes);
 
-    this.setChicanes(this.pieces, this.lanes);
-
     var indexes = biggestAndLastStraightIndexes(this.pieces);
     this.biggestStraightIndex = indexes.biggestStraightIndex;
     this.lastStraightIndex = indexes.lastStraightIndex;
@@ -87,6 +85,7 @@ function declarePrivateMethods() {
         this.pieces[0].previousPiece = this.pieces[this.pieces.length - 1];
 
         this.calculateBendIndexes();
+        this.setChicanes(this.pieces);
     };
 
     this.buildTrackPiece = function(piecesInfo, index) {
@@ -158,49 +157,36 @@ function declarePrivateMethods() {
         }
     };
 
-    this.setChicanes = function(pieces) {
+    this.setChicanes = function(pieces){
         var i = -1;
         var angleCounter = 0;
         var firstIndex = null;
         var lastIndex = null;
+        var smallStraights = 0;
         var pieceToVerify = null;
         while (++i < pieces.length - 1){
             var lastPiece = pieceToVerify;
             pieceToVerify = pieces[i];
             var nextPiece = pieces[i+1];
 
-            //small straight
-            if(pieceToVerify.type == "S" && pieceToVerify.length > 30)
+            if(pieceToVerify.length > 100)
                 continue;
 
-            if(pieceToVerify.type == "B") {
+            if(pieceToVerify.type == "B"){
                 angleCounter += pieceToVerify.angle;
                 firstIndex = firstIndex == null ? i : firstIndex;
                 lastIndex = i;
-
+                smallStraights = 0;
             }
 
             if(!!lastPiece && lastPiece.type == "B" && nextPiece.type == "B"
-                && lastPiece.angle + nextPiece.angle == 0 && pieceToVerify.length <= 25){
+                && lastPiece.angle + nextPiece.angle == 0 && pieceToVerify.length <= 30){
                 continue;
             }
 
-
-            pieceToVerify.piecesInBend();
-            if(firstIndex != null && lastIndex != null && angleCounter == 0) {
+            if(firstIndex != null && lastIndex != null && angleCounter == 0 && smallStraights == 0){
                 this.setPiecesAsChicanes(pieces, firstIndex, lastIndex);
             }
-            if(pieceToVerify.type == "B") {
-                // big bend
-                var bendLength = Piece.angleInRadians(pieceToVerify.bendAngle()) * pieceToVerify.radius;
-                if (bendLength >= 50) {
-                    firstIndex = null;
-                    lastIndex = null;
-                    angleCounter = 0;
-                    continue;
-                }
-            }
-
             if(pieceToVerify.type == "S") {
                 firstIndex = null;
                 lastIndex = null;

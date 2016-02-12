@@ -34,7 +34,6 @@ function Logger(serverName) {
     this.angleSpeed = "";
     this.angleAcceleration = "";
     this.pieceIndex = "";
-    this.isInChicane = "";
     this.nextBendPieceIndex = "";
     this.nextBendBendIndex = "";
     this.nextBendTargetLane = "";
@@ -78,18 +77,13 @@ Logger.refresh = function(car) {
         myLogger.angle = car.angle;
         myLogger.angleSpeed = car.angleSpeed;
         myLogger.angleAcceleration = car.angleAcceleration;
-
-        if(!!car.currentPiece) {
-            myLogger.pieceIndex = (car.currentPiece.index + " (" + car.currentPiece.type + ")");
-            myLogger.distanceToNextBend = car.distanceToBend();
-            myLogger.nextBendTargetLane = (!!car.nextLane) ? car.nextLane.index : "";
-            myLogger.crashAngle = car.currentPiece.angleToCrash;
-            myLogger.isInChicane = car.currentPiece.isInChicane;
-
-            var firstPieceInBendAhead = car.currentPiece.firstPieceInBendAhead();
-            myLogger.nextBendPieceIndex = firstPieceInBendAhead.index;
-            myLogger.nextBendBendIndex = firstPieceInBendAhead.bendIndex;
-        }
+        myLogger.pieceIndex = (!!car.currentPiece) ? (car.currentPiece.index + " (" + car.currentPiece.type + ")") : "";
+        myLogger.nextBendPieceIndex = (!!car.bendsAhead[0]) ? car.bendsAhead[0].index : "";
+        myLogger.nextBendBendIndex = (!!car.bendsAhead[0]) ? car.bendsAhead[0].bendIndex : "";
+        myLogger.distanceToNextBend = (!!car.currentPiece) ? car.distanceToBend() : "";
+        myLogger.nextBendTargetLane = (!!car.nextLane) ? car.nextLane.index : "";
+        myLogger.targetSpeeds = (!!car.bendsAhead[0] && !!car.bendsAhead[0].targetSpeeds) ? car.bendsAhead[0].targetSpeeds : "";
+        myLogger.crashAngle = (!!car.currentPiece) ? car.currentPiece.angleToCrash : myLogger.angleToCrash;
     }
 
     myLogger.print();
@@ -156,7 +150,6 @@ function declarePrivateMethods() {
         Angle acceleration:           %angleAcceleration%\n\
         CrashAngle:                   %crashAngle%\n\
         Piece:                        %pieceIndex%\n\
-        Chicane:                      %isInChicane%\n\
         Next bend:                    %nextBendPieceIndex%-%nextBendBendIndex%\n\
         Distance to next bend:        %distanceToNextBend%\n\
         Next lane:                    %nextBendTargetLane%\n\
@@ -188,7 +181,6 @@ function declarePrivateMethods() {
         output = output.replace("%angleAcceleration%", this.angleAcceleration);
         output = output.replace("%crashAngle%", this.crashAngle);
         output = output.replace("%pieceIndex%", this.pieceIndex);
-        output = output.replace("%isInChicane%", this.isInChicane);
         output = output.replace("%nextBendPieceIndex%", this.nextBendPieceIndex);
         output = output.replace("%nextBendBendIndex%", this.nextBendBendIndex);
         output = output.replace("%distanceToNextBend%", this.distanceToNextBend);
@@ -292,6 +284,17 @@ function declarePrivateMethods() {
         }
         return gauge;
     };
+
+    this.printTargetSpeeds = function () {
+        if(!(this.targetSpeeds instanceof Array))
+            return "";
+        var targetSpeeds = "";
+        var count = this.targetSpeeds.length;
+        for(i = 0; i < count; i++) {
+            targetSpeeds += this.targetSpeeds[i] + " ";
+        }
+        return targetSpeeds;
+    }
 
     this.printLogs = function() {
         var logCount = this.logs.length;

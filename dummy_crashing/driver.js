@@ -2,7 +2,6 @@ require('./array.median.js');
 require('./constants.js');
 
 var Logger = require("./logger.js");
-var Piece = require('./piece.js');
 var SwitchAI = require('./switchAI.js');
 var TurboAI = require('./turboAI.js');
 
@@ -173,8 +172,8 @@ function declarePrivateMethods() {
             return false;
 
         var car = this.car;
-        var nextBendPiece = car.currentPiece.firstPieceInBendAhead();
-        var targetSpeed = this.getSecureTargetSpeedForBendAhead(nextBendPiece);
+        var nextBendPiece = car.bendsAhead[0];
+        var targetSpeed = nextBendPiece.targetSpeed(car.laneInNextBend(), this.breakingFactor);
         Logger.setTargetSpeed(targetSpeed);
 
         if(car.currentSpeed < targetSpeed)
@@ -183,39 +182,21 @@ function declarePrivateMethods() {
         return this.isTimeToBreakForTargetSpeed(targetSpeed);
     };
 
-    this.getSecureTargetSpeedForBendAhead = function(nextBendPiece) {
-        var secondBendAhead = nextBendPiece.firstPieceInBendAhead();
-
-        var targetSpeed = nextBendPiece.targetSpeed(this.car.laneInNextBend(), this.breakingFactor);
-        var targetSpeedForSecondBendAhead = secondBendAhead.targetSpeed(this.car.laneInNextBend(), this.breakingFactor);
-        if(targetSpeed <= targetSpeedForSecondBendAhead)
-            return targetSpeed;
-
-        var divisionCounter = 1;
-        while(this.canBreakFromSpeedToNextBendTargetSpeed(nextBendPiece, targetSpeed, targetSpeedForSecondBendAhead, 0.0)
-                || divisionCounter > 1000) {
-            targetSpeed -= ((targetSpeed - targetSpeedForSecondBendAhead) / (divisionCounter * 2.0));
-            divisionCounter++;
-        }
-
-        return targetSpeed;
-    };
-
     this.isTimeToBreakForTargetSpeed = function(targetSpeed) {
         var currentSpeed = this.car.currentSpeed;
-        var currentPiece = this.car.currentPiece;
+        var breakAccelerationAverage = this.breakingAccelerationAverageToTargetSpeed(targetSpeed);
 
-        return this.canBreakFromSpeedToNextBendTargetSpeed(currentPiece, currentSpeed, targetSpeed, this.car.inPieceDistance);
-    };
+        // Calculate the ticks left to the car get into speedTarget
+        var ticksLeftToTargetSpeed = this.ticksToBreakToTargetSpeed(targetSpeed);
 
-    this.canBreakFromSpeedToNextBendTargetSpeed = function(piece, speed, targetSpeed, carOffset) {
-        var ticksLeftToTargetSpeed = this.ticksToBreakToTargetSpeed(speed, targetSpeed);
+        // Calculate the ticks left to entering the next bend
+        var distanceToBend = this.car.distanceToBend();
+        var ticksLeftToBendOnCurrentSpeed = this.getTicksToTravelDistance(distanceToBend,
+                                                                          currentSpeed,
+                                                                          breakAccelerationAverage);
 
-        var distanceToBend = Piece.distanceFromPieceToPiece(piece, piece.firstPieceInBendAhead(), this.car.lane);
-        distanceToBend -= carOffset;
-        var breakAccelerationAverage = this.breakingAccelerationAverageToTargetSpeed(speed, targetSpeed);
-        var ticksLeftToBendOnCurrentSpeed = this.getTicksToTravelDistance(distanceToBend, speed, breakAccelerationAverage);
-
+        // If the car needs more ticks to break than the ticks left to achieve the target speed,
+        // then it is time to break, otherwise, step on it!
         return (ticksLeftToBendOnCurrentSpeed < ticksLeftToTargetSpeed);
     };
 
@@ -229,12 +210,8 @@ function declarePrivateMethods() {
         if(car.currentSpeed <= maintenanceSpeed)
             return false;
 
-        if(piece.isInChicane)
-            maintenanceSpeed = piece.targetSpeed(this.car.lane, this.breakingFactor, piece.timesCrashedInBend);
-            //maintenanceSpeed *= 1.12;
-
         var ticksToCrash = this.ticksToCarAngle(piece.angleToCrash);
-        var ticksToMaintenanceSpeed = this.ticksToBreakToTargetSpeed(this.car.currentSpeed, maintenanceSpeed);
+        var ticksToMaintenanceSpeed = this.ticksToBreakToTargetSpeed(maintenanceSpeed);
 
         Logger.log(" ticksToTargAngle: " + ticksToCrash
             + " | ticksToTargSpeed: " + ticksToMaintenanceSpeed
@@ -243,17 +220,20 @@ function declarePrivateMethods() {
             + " | angleAccFactor: " + car.angleAccelerationFactor
             + " | " + maintenanceSpeed );
 
+        if(piece.isInChicane)
+            ticksToMaintenanceSpeed *= 1.09;
         return ticksToCrash < ticksToMaintenanceSpeed;
     };
 
     // ***** Utility methods ***** //
 
-    this.breakingAccelerationAverageToTargetSpeed = function(speed, targetSpeed) {
-        if(speed < targetSpeed)
+    this.breakingAccelerationAverageToTargetSpeed = function(targetSpeed) {
+        var currentSpeed = this.car.currentSpeed;
+        if(currentSpeed < targetSpeed)
             return 0.0;
 
         // Calculate the breaking acceleration if the car fully breaks with current speed
-        var currentBreakAcceleration = speed / this.breakingFactor;
+        var currentBreakAcceleration = currentSpeed / this.breakingFactor;
 
         // Calculate the breaking acceleration for target speed
         var targetBreakAcceleration = targetSpeed / this.breakingFactor;
@@ -262,12 +242,13 @@ function declarePrivateMethods() {
         return ((currentBreakAcceleration + targetBreakAcceleration) / 2.0);
     };
 
-    this.ticksToBreakToTargetSpeed = function(speed, targetSpeed) {
-        var speedDiff = speed - targetSpeed;
+    this.ticksToBreakToTargetSpeed = function(targetSpeed) {
+        var currentSpeed = this.car.currentSpeed;
+        var speedDiff = currentSpeed - targetSpeed;
         if(speedDiff <= 0)
             return Infinity;
 
-        var breakAccelerationAverage = this.breakingAccelerationAverageToTargetSpeed(speed, targetSpeed);
+        var breakAccelerationAverage = this.breakingAccelerationAverageToTargetSpeed(targetSpeed);
         return Math.ceil(speedDiff / breakAccelerationAverage);
     };
 
@@ -287,8 +268,7 @@ function declarePrivateMethods() {
         var angleSpeed = this.car.angleSpeed;
         var angleAcc = this.car.angleAcceleration;
 
-        // infinite loop bug [2]
-        while(angleDelta > 0.0 || ticks > 1000) {
+        while(angleDelta > 0.0) {
             angleDelta -= angleSpeed + (angleAcc * ticks);
             ticks++;
         }
@@ -298,12 +278,7 @@ function declarePrivateMethods() {
 
     this.getTicksToTravelDistance = function(distance, speed, acceleration) {
         var ticks = 0;
-
-        // infinite loop bug [2]
-        if(speed <= 0)
-            return ticks;
-
-        while(distance > 0.0 || ticks > 1000) {
+        while(distance > 0.0) {
             distance -= speed + (acceleration * ticks);
             ticks++;
         }
